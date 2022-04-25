@@ -78,7 +78,7 @@ function initObstacles() {
 // Instantiates a tree at given coordinates and scale
 function initTree(x = 0, z = 0, width = 1.5, height = 4) {
 	var trunkRadius = width / 5; //Trunk should be 1/5 the width 
-	var trunkHeight = height / 3; // Trunk should be 1/3 the height
+	var trunkHeight = height / 5; // Trunk should be 1/3 the height
 	
 	const trunkGeometry = new THREE.CylinderGeometry( trunkRadius , trunkRadius, trunkHeight);
 	const trunkMaterial = new THREE.MeshPhongMaterial({ color: brown, wireframe: WIREFRAME });
