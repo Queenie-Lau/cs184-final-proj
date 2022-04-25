@@ -70,25 +70,26 @@ function initObstacles() {
 	scene.add( meshCube );
 
 
-	initTree(3, 0, 3);
-	initTree(-3, 0, -6, 2, 5);
+	initTree(-3, -6, 2.5, 6);
+	initTree(5, 5, 1, 8);
+	initTree(3, 3);
 }
 
 // Instantiates a tree at given coordinates and scale
-function initTree(x = 0, y = 0, z = 0, width = 1.5, height = 4) {
+function initTree(x = 0, z = 0, width = 1.5, height = 4) {
 	var trunkRadius = width / 5; //Trunk should be 1/5 the width 
 	var trunkHeight = height / 3; // Trunk should be 1/3 the height
 	
 	const trunkGeometry = new THREE.CylinderGeometry( trunkRadius , trunkRadius, trunkHeight);
 	const trunkMaterial = new THREE.MeshPhongMaterial({ color: brown, wireframe: WIREFRAME });
 	const treeTrunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-	treeTrunk.position.set(x, y + trunkHeight / 2, z);
+	treeTrunk.position.set(x, trunkHeight / 2, z);
 	treeTrunk.receiveShadow = true;
 	treeTrunk.castShadow = true;
 	const leafGeometry = new THREE.ConeGeometry(width, height);
 	const leafMaterial = new THREE.MeshPhongMaterial({ color: green, wireframe: WIREFRAME });
 	const treeLeaves = new THREE.Mesh(leafGeometry, leafMaterial);
-	treeLeaves.position.set(x, y + trunkHeight + height / 2, z);
+	treeLeaves.position.set(x, trunkHeight + height / 2, z);
 	treeLeaves.receiveShadow = true;
 	treeLeaves.castShadow = true;
 	scene.add(treeLeaves);
@@ -97,7 +98,7 @@ function initTree(x = 0, y = 0, z = 0, width = 1.5, height = 4) {
 
 // Instantiate scene lights
 function initLights() {
-	const ambientLight = new THREE.AmbientLight(white, 0.2);
+	const ambientLight = new THREE.AmbientLight(white, 0.3);
 	const pointLight = new THREE.PointLight(white, 0.8, 18);
 	pointLight.position.set(-3, 6, -3);
 	pointLight.castShadow = true;
