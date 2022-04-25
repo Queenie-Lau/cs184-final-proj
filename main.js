@@ -2,56 +2,37 @@
 	Initializes scene and player movement
 */
 
-var renderer, scene, camera, meshCube, meshFloor;
-var ambientLight, pointLight;
+var renderer, scene, camera; 
+var northBoundary, southBoundary, eastBoundary, westBoundary; // Boundaries
+var meshCube, meshFloor; // Scene Primitives 
+var ambientLight, pointLight; // Lights
 
 var player = {height: 1.8, speed: 0.2, turnSpeed: Math.PI * 0.02};
+var platform = {width: 20, height: 30};
 var keyboard = {};	
 
 var WIREFRAME = false;
+
+var white = 0xffffff;
+var red = 0xff4444;
+var blue = 0x039dfc;
+
 // initialize scene
 function main() {
 
 	//Create and position the camera
-	camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 10 );
+	camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 30 );
 	camera.position.set(0, player.height, -5);
 	camera.lookAt(new THREE.Vector3(0,player.height,0));
 
 	scene = new THREE.Scene();
 
-	// Instantiate the cube mesh
-	const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-	const cubeMaterial = new THREE.MeshPhongMaterial({color: 0xff4444, wireframe: WIREFRAME});
-	meshCube = new THREE.Mesh( cubeGeometry, cubeMaterial );
-	meshCube.position.y += 1;
-	meshCube.receiveShadow = true;
-	meshCube.castShadow = true;
-	scene.add( meshCube );
-
-	// Instantiate the floor mesh
-	const floorGeometry = new THREE.PlaneGeometry(10,10);
-	const floorMaterial = new THREE.MeshPhongMaterial({color:0xffffff, wireframe: WIREFRAME})
-	meshFloor = new THREE.Mesh( floorGeometry, floorMaterial );
-	meshFloor.rotation.x -= Math.PI / 2;
-	meshFloor.receiveShadow = true;
-	scene.add(meshFloor);
-
-	// Instantiate scene lights
-	ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
-	pointLight = new THREE.PointLight(0xffffff, 0.8, 18);
-	pointLight.position.set(-3, 6, -3);
-	pointLight.castShadow = true;
-	pointLight.shadow.camera.near = 0.1;
-	pointLight.shadow.camera.far = 25;
-	scene.add(pointLight);
-	scene.add(ambientLight);
+	addScenePrimitives();
 
 	// Instantiate the renderer
 	renderer = new THREE.WebGLRenderer( { antialias: true } );
 	renderer.setSize( window.innerWidth, window.innerHeight );
-
-
-	// Add Shadow Map to the renderer
+	// Add Shadow Map 
 	renderer.shadowMap.enabled = true;
 	renderer.shadowMap.type = THREE.BasicShadowMap;
 	document.body.appendChild( renderer.domElement );
@@ -59,6 +40,83 @@ function main() {
 	animate();
 
 }
+
+// Instantiates all scene primitives
+function addScenePrimitives() {
+	initBoundaries();
+	initObstacles();
+	initLights();
+	initFloor();
+
+}
+
+// Instantiate the floor mesh
+function initFloor() {
+	const floorGeometry = new THREE.PlaneGeometry( platform.width, platform.height );
+	const floorMaterial = new THREE.MeshPhongMaterial( {color: white, wireframe: WIREFRAME} )
+	meshFloor = new THREE.Mesh( floorGeometry, floorMaterial );
+	meshFloor.rotation.x -= Math.PI / 2;
+	meshFloor.receiveShadow = true;
+	scene.add(meshFloor);
+}
+
+// Instantiate player obstacles
+function initObstacles() {
+	const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+	const cubeMaterial = new THREE.MeshPhongMaterial({color: red, wireframe: WIREFRAME});
+	meshCube = new THREE.Mesh( cubeGeometry, cubeMaterial );
+	meshCube.position.y += 1;
+	meshCube.receiveShadow = true;
+	meshCube.castShadow = true;
+	scene.add( meshCube );
+}
+
+// Instantiate scene lights
+function initLights() {
+	ambientLight = new THREE.AmbientLight(white, 0.2);
+	pointLight = new THREE.PointLight(white, 0.8, 18);
+	pointLight.position.set(-3, 6, -3);
+	pointLight.castShadow = true;
+	pointLight.shadow.camera.near = 0.1;
+	pointLight.shadow.camera.far = 25;
+
+	scene.add(pointLight);
+	scene.add(ambientLight);
+}
+
+// Instantiate boundaries
+function initBoundaries() {
+	const boundaryMaterial = new THREE.MeshPhongMaterial({color: blue, wireframe: WIREFRAME});
+	const boundaryGeometry = new THREE.BoxGeometry(platform.width + 1, 1.5, 1);
+	const boundaryGeometryPerp = new THREE.BoxGeometry(1, 1.5, platform.height);
+	northBoundary = new THREE.Mesh( boundaryGeometry, boundaryMaterial );
+	southBoundary = new THREE.Mesh( boundaryGeometry, boundaryMaterial );
+	eastBoundary = new THREE.Mesh( boundaryGeometryPerp, boundaryMaterial );
+	westBoundary = new THREE.Mesh( boundaryGeometryPerp, boundaryMaterial );
+
+
+	northBoundary.position.z = platform.height / 2; 
+	southBoundary.position.z = -platform.height / 2; 
+	westBoundary.position.x = platform.width / 2;
+	eastBoundary.position.x = -platform.width / 2; 
+
+	northBoundary.receiveShadow = true;
+	southBoundary.receiveShadow = true;
+	eastBoundary.receiveShadow = true;
+	westBoundary.receiveShadow = true;
+
+	northBoundary.castShadow = true;
+	southBoundary.castShadow = true;
+	eastBoundary.castShadow = true;
+	westBoundary.castShadow = true;
+
+	scene.add( northBoundary );
+	scene.add( southBoundary );
+	scene.add( eastBoundary );
+	scene.add( westBoundary );
+}
+
+
 
 function animate() {
 	requestAnimationFrame(animate);
