@@ -3,7 +3,7 @@
 */
 var renderer, scene, camera, meshCube, meshFloor;
 
-var player = {height: 1.8};
+var player = {height: 1.8, speed: 0.05};
 var keyboard = {};	
 // initialize scene
 function main() {
@@ -42,10 +42,26 @@ function animate() {
 	meshCube.rotation.x += 0.01;
 	meshCube.rotation.y += 0.02;
 
+	// MOVEMENT 
+	if (keyboard[87]) { // W key
+		camera.position.x -= Math.sin(camera.rotation.y) * player.speed;
+		camera.position.z += Math.cos(camera.rotation.y) * player.speed;
+	}
+	if (keyboard[83]) { // S key
+		camera.position.x += Math.sin(camera.rotation.y) * player.speed;
+		camera.position.z -= Math.cos(camera.rotation.y) * player.speed;
+	}
+	if(keyboard[65]){ // A key
+		camera.position.x += Math.sin(camera.rotation.y + Math.PI/2) * player.speed;
+		camera.position.z -= Math.cos(camera.rotation.y + Math.PI/2) * player.speed;
+	}
+	if(keyboard[68]){ // D key
+		camera.position.x += Math.sin(camera.rotation.y - Math.PI/2) * player.speed;
+		camera.position.z -= Math.cos(camera.rotation.y - Math.PI/2) * player.speed;
+	}
 	if (keyboard[37]) { // Left arrow key 
 		camera.rotation.y -= Math.PI * 0.01;
 	}
-
 	if (keyboard[39]) { // Right arrow key 
 		camera.rotation.y += Math.PI * 0.01;
 	}
