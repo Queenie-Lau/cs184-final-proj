@@ -1,17 +1,21 @@
 /*
 	Initializes scene and player movement
 */
-var renderer, scene, camera, mesh;
+var renderer, scene, camera, mesh, meshFloor;
 
+var player = {height: 1.8};
+var keyboard = {};	
 // initialize scene
 function main() {
 
-	camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 10 );
-	camera.position.z = 1;
+	camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 10 );
+	camera.position.set(0, player.height, -5);
+	camera.lookAt(new THREE.Vector3(0,player.height,0));
+	//camera.position.z = 1;
 
 	scene = new THREE.Scene();
 
-	const geometry = new THREE.BoxGeometry( 0.2, 0.2, 0.2 );
+	const geometry = new THREE.BoxGeometry(1, 1, 1);
 	const material = new THREE.MeshNormalMaterial();
 
 	mesh = new THREE.Mesh( geometry, material );
@@ -30,12 +34,27 @@ function animate() {
 	mesh.rotation.x += 0.01;
 	mesh.rotation.y += 0.02;
 
+	if (keyboard[37]) { // Left arrow key 
+		camera.rotation.y -= Math.PI * 0.01;
+	}
+
+	if (keyboard[39]) { // Right arrow key 
+		camera.rotation.y += Math.PI * 0.01;
+	}
+
 	renderer.render( scene, camera );
 }
 
-function playerMovement() {
-	
+
+function keyDown(event) {
+	keyboard[event.keyCode] = true;
+}
+
+function keyUp(event) {
+	keyboard[event.keyCode] = false;
 }
 
 
+window.addEventListener('keydown', keyDown);
+window.addEventListener('keyup', keyUp);
 window.onload = main;
