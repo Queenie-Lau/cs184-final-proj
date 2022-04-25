@@ -21,6 +21,12 @@ function main() {
 	mesh = new THREE.Mesh( geometry, material );
 	scene.add( mesh );
 
+	meshFloor = new THREE.Mesh(
+		new THREE.PlaneGeometry(10,10), 
+		new THREE.MeshBasicMaterial({color:0xffffff, wireframe: false})
+		);
+	meshFloor.rotation.x -= Math.PI / 2;
+	scene.add(meshFloor);
 	renderer = new THREE.WebGLRenderer( { antialias: true } );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	document.body.appendChild( renderer.domElement );
