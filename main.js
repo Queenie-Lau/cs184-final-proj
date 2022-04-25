@@ -2,10 +2,10 @@
 	Initializes scene and player movement
 */
 
-var renderer, scene, camera; 
-var northBoundary, southBoundary, eastBoundary, westBoundary; // Boundaries
-var meshCube, meshFloor; // Scene Primitives 
-var ambientLight, pointLight; // Lights
+var renderer, scene, camera; // Basics 
+//var northBoundary, southBoundary, eastBoundary, westBoundary; // Boundaries
+var meshCube; //, meshFloor, treeTrunk, treeLeaves; // Scene Primitives 
+//var ambientLight, pointLight; // Lights
 
 var player = {height: 1.8, speed: 0.2, turnSpeed: Math.PI * 0.02};
 var platform = {width: 20, height: 30};
@@ -16,6 +16,8 @@ var WIREFRAME = false;
 var white = 0xffffff;
 var red = 0xff4444;
 var blue = 0x039dfc;
+var brown = 0x964B00;
+var green = 0x42692f;
 
 // initialize scene
 function main() {
@@ -26,12 +28,12 @@ function main() {
 	camera.lookAt(new THREE.Vector3(0,player.height,0));
 
 	scene = new THREE.Scene();
-
 	addScenePrimitives();
 
 	// Instantiate the renderer
 	renderer = new THREE.WebGLRenderer( { antialias: true } );
 	renderer.setSize( window.innerWidth, window.innerHeight );
+
 	// Add Shadow Map 
 	renderer.shadowMap.enabled = true;
 	renderer.shadowMap.type = THREE.BasicShadowMap;
@@ -54,7 +56,7 @@ function addScenePrimitives() {
 function initFloor() {
 	const floorGeometry = new THREE.PlaneGeometry( platform.width, platform.height );
 	const floorMaterial = new THREE.MeshPhongMaterial( {color: white, wireframe: WIREFRAME} )
-	meshFloor = new THREE.Mesh( floorGeometry, floorMaterial );
+	const meshFloor = new THREE.Mesh( floorGeometry, floorMaterial );
 	meshFloor.rotation.x -= Math.PI / 2;
 	meshFloor.receiveShadow = true;
 	scene.add(meshFloor);
@@ -69,12 +71,37 @@ function initObstacles() {
 	meshCube.receiveShadow = true;
 	meshCube.castShadow = true;
 	scene.add( meshCube );
+
+
+	initTree(3, 0, 3);
+	initTree(-3, 0, -6, 2, 5);
+}
+
+// Instantiates a tree at given coordinates and scale
+function initTree(x = 0, y = 0, z = 0, width = 1.5, height = 4) {
+	var trunkRadius = width / 5; //Trunk should be 1/5 the width 
+	var trunkHeight = height / 3; // Trunk should be 1/3 the height
+	
+	const trunkGeometry = new THREE.CylinderGeometry( trunkRadius , trunkRadius, trunkHeight);
+	const trunkMaterial = new THREE.MeshPhongMaterial({ color: brown, wireframe: WIREFRAME });
+	const treeTrunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+	treeTrunk.position.set(x, y + trunkHeight / 2, z);
+	treeTrunk.receiveShadow = true;
+	treeTrunk.castShadow = true;
+	const leafGeometry = new THREE.ConeGeometry(width, height);
+	const leafMaterial = new THREE.MeshPhongMaterial({ color: green, wireframe: WIREFRAME });
+	const treeLeaves = new THREE.Mesh(leafGeometry, leafMaterial);
+	treeLeaves.position.set(x, y + trunkHeight + height / 2, z);
+	treeLeaves.receiveShadow = true;
+	treeLeaves.castShadow = true;
+	scene.add(treeLeaves);
+	scene.add(treeTrunk);
 }
 
 // Instantiate scene lights
 function initLights() {
-	ambientLight = new THREE.AmbientLight(white, 0.2);
-	pointLight = new THREE.PointLight(white, 0.8, 18);
+	const ambientLight = new THREE.AmbientLight(white, 0.2);
+	const pointLight = new THREE.PointLight(white, 0.8, 18);
 	pointLight.position.set(-3, 6, -3);
 	pointLight.castShadow = true;
 	pointLight.shadow.camera.near = 0.1;
@@ -89,10 +116,10 @@ function initBoundaries() {
 	const boundaryMaterial = new THREE.MeshPhongMaterial({color: blue, wireframe: WIREFRAME});
 	const boundaryGeometry = new THREE.BoxGeometry(platform.width + 1, 1.5, 1);
 	const boundaryGeometryPerp = new THREE.BoxGeometry(1, 1.5, platform.height);
-	northBoundary = new THREE.Mesh( boundaryGeometry, boundaryMaterial );
-	southBoundary = new THREE.Mesh( boundaryGeometry, boundaryMaterial );
-	eastBoundary = new THREE.Mesh( boundaryGeometryPerp, boundaryMaterial );
-	westBoundary = new THREE.Mesh( boundaryGeometryPerp, boundaryMaterial );
+	const northBoundary = new THREE.Mesh( boundaryGeometry, boundaryMaterial );
+	const southBoundary = new THREE.Mesh( boundaryGeometry, boundaryMaterial );
+	const eastBoundary = new THREE.Mesh( boundaryGeometryPerp, boundaryMaterial );
+	const westBoundary = new THREE.Mesh( boundaryGeometryPerp, boundaryMaterial );
 
 
 	northBoundary.position.z = platform.height / 2; 
