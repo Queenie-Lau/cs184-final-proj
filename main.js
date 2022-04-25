@@ -2,10 +2,7 @@
 	Initializes scene and player movement
 */
 
-var renderer, scene, camera; // Basics 
-//var northBoundary, southBoundary, eastBoundary, westBoundary; // Boundaries
-var meshCube; //, meshFloor, treeTrunk, treeLeaves; // Scene Primitives 
-//var ambientLight, pointLight; // Lights
+var renderer, scene, camera, meshCube; 
 
 var player = {height: 1.8, speed: 0.2, turnSpeed: Math.PI * 0.02};
 var platform = {width: 20, height: 30};
