@@ -18,7 +18,6 @@ var green = 0x42692f;
 
 // initialize scene
 function main() {
-
 	//Create and position the camera
 	camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 30 );
 	camera.position.set(0, player.height, -5);
@@ -37,7 +36,6 @@ function main() {
 	document.body.appendChild( renderer.domElement );
 
 	animate();
-
 }
 
 // Instantiates all scene primitives
@@ -46,7 +44,6 @@ function addScenePrimitives() {
 	initObstacles();
 	initLights();
 	initFloor();
-
 }
 
 // Instantiate the floor mesh
@@ -68,7 +65,6 @@ function initObstacles() {
 	meshCube.receiveShadow = true;
 	meshCube.castShadow = true;
 	scene.add( meshCube );
-
 
 	initTree(-3, -6, 2.5, 6);
 	initTree(5, 5, 1, 8);
@@ -141,6 +137,10 @@ function initBoundaries() {
 	scene.add( westBoundary );
 }
 
+function initSmokeColors() {
+
+
+}
 
 
 function animate() {
@@ -165,11 +165,18 @@ function animate() {
 		camera.position.x += Math.sin(camera.rotation.y - Math.PI/2) * player.speed;
 		camera.position.z -= Math.cos(camera.rotation.y - Math.PI/2) * player.speed;
 	}
+	// TURNING
 	if (keyboard[37]) { // Left arrow key 
 		camera.rotation.y -= player.turnSpeed;
 	}
 	if (keyboard[39]) { // Right arrow key 
 		camera.rotation.y += player.turnSpeed;
+	}
+	if (keyboard[38]) { // Up arrow key
+		camera.rotation.x -= player.turnSpeed;
+	}
+	if (keyboard[40]) { // Down arrow key 
+		camera.rotation.x += player.turnSpeed;
 	}
 
 	renderer.render( scene, camera );
