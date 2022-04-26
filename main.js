@@ -22,6 +22,8 @@ function main() {
 	camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 30 );
 	camera.position.set(0, player.height, -5);
 	camera.lookAt(new THREE.Vector3(0,player.height,0));
+	//const controls = new OrbitControls( camera, renderer.domElement );s
+
 
 	scene = new THREE.Scene();
 	addScenePrimitives();
@@ -44,6 +46,8 @@ function addScenePrimitives() {
 	initObstacles();
 	initLights();
 	initFloor();
+	scene.fog = new THREE.Fog(0xDFE9F3, -10, 50);
+	scene.background = new THREE.Color("rgb(135, 206, 235)");
 }
 
 // Instantiate the floor mesh
@@ -137,6 +141,7 @@ function initBoundaries() {
 	scene.add( westBoundary );
 }
 
+// Initialize smoke colors
 function initSmokeColors() {
 
 
