@@ -15,6 +15,7 @@ var red = 0xff4444;
 var blue = 0x039dfc;
 var brown = 0x964B00;
 var green = 0x42692f;
+var purple = 0x6a0dad;
 
 // initialize scene
 function main() {
@@ -61,24 +62,46 @@ function initFloor() {
 
 // Instantiate player obstacles
 function initObstacles() {
+	initSpinningCube();
+	initTree(-3, -6, 2.5, 6);
+	initTree(5, 5, 1, 8);
+	initTree(3, 3);
+	initTree(-4, 8);
+	initTree(8, 8);
+	initTree(-6, 9, 1.5, 4, 7);
+	initTree(-7.5, -7.5, 2, 6, 7);
+
+	initCube(6, .5, -4, 3, 5, 1);
+	initCube(4, 1, -10, 5, 10, 1, purple);
+	initCube(-4, 1, 0, 2, 2, 2, purple);
+}
+
+function initSpinningCube(x = 0, z = 0) {
 	const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
 	const cubeMaterial = new THREE.MeshPhongMaterial({color: red, wireframe: WIREFRAME});
 	meshCube = new THREE.Mesh( cubeGeometry, cubeMaterial );
-	meshCube.position.y += 1;
+	meshCube.position.set(x, 1, z);
 	meshCube.receiveShadow = true;
 	meshCube.castShadow = true;
 	scene.add( meshCube );
 
+}
 
-	initTree(-3, -6, 2.5, 6);
-	initTree(5, 5, 1, 8);
-	initTree(3, 3);
+function initCube(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color = red) {
+	const geometry = new THREE.BoxGeometry(width, height, depth);
+	const material = new THREE.MeshPhongMaterial({color: color, wireframe: WIREFRAME});
+	const cube = new THREE.Mesh( geometry, material );
+	cube.position.set(x, y, z);
+	cube.receiveShadow = true;
+	cube.castShadow = true;
+	scene.add( cube );
+
 }
 
 // Instantiates a tree at given coordinates and scale
-function initTree(x = 0, z = 0, width = 1.5, height = 4) {
-	var trunkRadius = width / 5; //Trunk should be 1/5 the width 
-	var trunkHeight = height / 5; // Trunk should be 1/3 the height
+function initTree(x = 0, z = 0, width = 1.5, height = 4, scale = 5) {
+	var trunkRadius = width / scale; //Trunk should be 1/scale the width 
+	var trunkHeight = height / scale; // Trunk should be 1/scale the height
 	
 	const trunkGeometry = new THREE.CylinderGeometry( trunkRadius , trunkRadius, trunkHeight);
 	const trunkMaterial = new THREE.MeshPhongMaterial({ color: brown, wireframe: WIREFRAME });
@@ -110,35 +133,11 @@ function initLights() {
 }
 
 // Instantiate boundaries
-function initBoundaries() {
-	const boundaryMaterial = new THREE.MeshPhongMaterial({color: blue, wireframe: WIREFRAME});
-	const boundaryGeometry = new THREE.BoxGeometry(platform.width + 1, 1.5, 1);
-	const boundaryGeometryPerp = new THREE.BoxGeometry(1, 1.5, platform.height);
-	const northBoundary = new THREE.Mesh( boundaryGeometry, boundaryMaterial );
-	const southBoundary = new THREE.Mesh( boundaryGeometry, boundaryMaterial );
-	const eastBoundary = new THREE.Mesh( boundaryGeometryPerp, boundaryMaterial );
-	const westBoundary = new THREE.Mesh( boundaryGeometryPerp, boundaryMaterial );
-
-
-	northBoundary.position.z = platform.height / 2; 
-	southBoundary.position.z = -platform.height / 2; 
-	westBoundary.position.x = platform.width / 2;
-	eastBoundary.position.x = -platform.width / 2; 
-
-	northBoundary.receiveShadow = true;
-	southBoundary.receiveShadow = true;
-	eastBoundary.receiveShadow = true;
-	westBoundary.receiveShadow = true;
-
-	northBoundary.castShadow = true;
-	southBoundary.castShadow = true;
-	eastBoundary.castShadow = true;
-	westBoundary.castShadow = true;
-
-	scene.add( northBoundary );
-	scene.add( southBoundary );
-	scene.add( eastBoundary );
-	scene.add( westBoundary );
+function initBoundaries(color = blue) {
+	initCube(0, 0, platform.height / 2, platform.width + 1, 1.5, 1, color);
+	initCube(0, 0, -platform.height / 2, platform.width + 1, 1.5, 1, color);
+	initCube(platform.width / 2, 0, 0, 1, 1.5, platform.height, color);
+	initCube(-platform.width / 2, 0, 0, 1, 1.5, platform.height, color);
 }
 
 
