@@ -26,7 +26,7 @@ function main() {
 	camera.lookAt(new THREE.Vector3(0,player.height,0));
 
 	scene = new THREE.Scene();
-	addScenePrimitives();
+	addSceneObjects();
 
 	// Instantiate the renderer
 	renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -42,9 +42,9 @@ function main() {
 }
 
 // Instantiates all scene primitives
-function addScenePrimitives() {
+function addSceneObjects() {
 	initBoundaries();
-	initObstacles();
+	initObjects();
 	initLights();
 	initFloor();
 
@@ -61,7 +61,7 @@ function initFloor() {
 }
 
 // Instantiate player obstacles
-function initObstacles() {
+function initObjects() {
 	initSpinningCube();
 	initTree(-3, -6, 2.5, 6);
 	initTree(5, 5, 1, 8);
