@@ -63,7 +63,7 @@ function initFloor() {
 
 // Instantiate player obstacles
 function initObjects() {
-	initSpinningCube();
+	initSpinningCube(2, 8);
 	initTree(-3, -6, 2.5, 6);
 	initTree(5, 5, 1, 8);
 	initTree(3, 3);
