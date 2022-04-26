@@ -19,11 +19,12 @@ var purple = 0x6a0dad;
 
 // initialize scene
 function main() {
-
 	//Create and position the camera
 	camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 30 );
 	camera.position.set(0, player.height, -5);
 	camera.lookAt(new THREE.Vector3(0,player.height,0));
+	//const controls = new OrbitControls( camera, renderer.domElement );s
+
 
 	scene = new THREE.Scene();
 	addSceneObjects();
@@ -38,7 +39,6 @@ function main() {
 	document.body.appendChild( renderer.domElement );
 
 	animate();
-
 }
 
 // Instantiates all scene primitives
@@ -47,7 +47,8 @@ function addSceneObjects() {
 	initObjects();
 	initLights();
 	initFloor();
-
+	scene.fog = new THREE.Fog(0xDFE9F3, -10, 50);
+	scene.background = new THREE.Color("rgb(135, 206, 235)");
 }
 
 // Instantiate the floor mesh
@@ -140,6 +141,11 @@ function initBoundaries(color = blue) {
 	initCube(-platform.width / 2, 0, 0, 1, 1.5, platform.height, color);
 }
 
+// Initialize smoke colors
+function initSmokeColors() {
+
+
+}
 
 
 function animate() {
@@ -164,11 +170,18 @@ function animate() {
 		camera.position.x += Math.sin(camera.rotation.y - Math.PI/2) * player.speed;
 		camera.position.z -= Math.cos(camera.rotation.y - Math.PI/2) * player.speed;
 	}
+	// TURNING
 	if (keyboard[37]) { // Left arrow key 
 		camera.rotation.y -= player.turnSpeed;
 	}
 	if (keyboard[39]) { // Right arrow key 
 		camera.rotation.y += player.turnSpeed;
+	}
+	if (keyboard[38]) { // Up arrow key
+		camera.rotation.x -= player.turnSpeed;
+	}
+	if (keyboard[40]) { // Down arrow key 
+		camera.rotation.x += player.turnSpeed;
 	}
 
 	renderer.render( scene, camera );
