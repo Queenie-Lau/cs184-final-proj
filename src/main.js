@@ -3,6 +3,7 @@
 */
 import * as THREE from './js/three.js';
 import { OrbitControls } from './js/OrbitControls.js';
+import { GLTFLoader } from './js/GLTFLoader.js';
 
 var renderer, scene, camera, meshCube; 
 
@@ -144,13 +145,6 @@ function initBoundaries(color = blue) {
 	initCube(-platform.width / 2, 0, 0, 1, 1.5, platform.height, color);
 }
 
-// Initialize smoke colors
-function initSmokeColors() {
-
-
-}
-
-
 function animate() {
 	requestAnimationFrame(animate);
 	meshCube.rotation.x += 0.01;
@@ -175,16 +169,16 @@ function animate() {
 	}
 	// TURNING
 	if (keyboard[37]) { // Left arrow key 
-		camera.rotation.y -= player.turnSpeed;
-	}
-	if (keyboard[39]) { // Right arrow key 
 		camera.rotation.y += player.turnSpeed;
 	}
+	if (keyboard[39]) { // Right arrow key 
+		camera.rotation.y -= player.turnSpeed;
+	}
 	if (keyboard[38]) { // Up arrow key
-		camera.rotation.x -= player.turnSpeed;
+		camera.rotation.x += player.turnSpeed;
 	}
 	if (keyboard[40]) { // Down arrow key 
-		camera.rotation.x += player.turnSpeed;
+		camera.rotation.x -= player.turnSpeed;
 	}
 
 	renderer.render( scene, camera );
@@ -198,6 +192,40 @@ function keyDown(event) {
 function keyUp(event) {
 	keyboard[event.keyCode] = false;
 }
+
+// Instantiate a loader
+const loader = new GLTFLoader();
+
+// Load a glTF resource
+loader.load(
+	// resource URL
+	'assets/goomba/scene.gltf',
+	// called when the resource is loaded
+	function ( gltf ) {
+		gltf.scene.scale.set(0.001, 0.001, 0.001); 
+		scene.add( gltf.scene );
+
+		gltf.animations; // Array<THREE.AnimationClip>
+		gltf.scene; // THREE.Group
+		gltf.scenes; // Array<THREE.Group>
+		gltf.cameras; // Array<THREE.Camera>
+		gltf.asset; // Object
+
+	},
+	// called while loading is progressing
+	function ( xhr ) {
+
+		console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+
+	},
+	// called when loading has errors
+	function ( error ) {
+
+		console.log( 'An error happened' );
+
+	}
+);
+
 
 
 window.addEventListener('keydown', keyDown);
