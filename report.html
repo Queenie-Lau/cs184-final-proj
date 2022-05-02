@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <html>
 	<head>
         <style>
@@ -11,34 +12,40 @@
               font-family: 'Open Sans', sans-serif;
               color: #121212;
             }
-        
+            
             h1,
             h2,
             h3,
             h4 {
               font-family: 'Source Sans Pro', sans-serif;
             }
+
+            div.padded {
+            padding-top: 0px;
+            padding-right: 100px;
+            padding-bottom: 0.25in;
+            padding-left: 100px;
+		      }
           </style>
 		<title>CS184 First Person Shooter</title>
-		<script type="text/javascript" src="main.js" ></script>
-        <script type="module" src="./js/three.js"></script>
-		
-		
     </head>
     <body>
-        <h1 align="middle">3.1A Milestone Status Report Webpage</h1>
-        <h2 align="middle">CS184 Final Project: First Person Shooter Game        </h2>
+        <h1 align="middle">Milestone Status Report</h1>
+        <h2 align="middle">CS184 Final Project: First Person Shooter Game</h2>
+        <h3 align="middle">Dakshina Palasamudrum, Justin Radatti, Neel Choudhary, Queenie Lau</h3>
         <h3 align="middle"><strong> Overview:</strong></h3>
-        <p>We are building a First Point of View interactive, 360 degree game render based on the popular video game Super Mario Brothers. Utilizing three.js and WebGL, we intend to create a 360 degree game that allows the player (the camera) to move around with arrow keys, shoot at enemies, bricks, boxes, and coin blocks, and see the amount of coins and time they have left to shoot.</p>
+        <p>We are building a First Point of View interactive, 360 degree game render based on the popular video game Super Mario Brothers. 
+          Utilizing three.js and WebGL, we intend to create a 360 degree game that allows the player (the camera) to move around with arrow keys, 
+          shoot at enemies, bricks, boxes, and coin blocks, and see the amount of coins and time they have left to shoot.</p>
         <h3 align="middle"><strong> Inspiration for End Goal:</strong></h3>
         <div align="middle">
             <table style="width=100%">
               <tr>
                 <td>
-                  <img src="../cs184-final-proj/images/1.png" align="left" width="400px" />
+                  <img src="./images/1.png" align="left" width="400px" />
                 </td>
                 <td>
-                  <img src="./images/2.png" align="right" width="400px" />
+                  <img src="./images/2.png" align="right" width="450px" />
 
                 </td>
               </tr>
@@ -49,69 +56,86 @@
 
                 </td>
                 <td>
-                  <img src="./images/4.png" align="right" width="400px" />
+                  <img src="./images/4.png" align="right" width="500px" />
 
                 </td>
               </tr>
             </table>
           </div>
           <h3><strong>What we have accomplished:</strong></h3>
-          <p>We have rendered a 3D scene in which the user can move around and observe several objects. So far, we have initialized our scene by creating a floor mesh, instantiating player obstacles, trees, scene lights, boundaries, ambient fog,  and also implemented movements such as turning left, up, right, and down. This experience is developed in the first-person perspective and provides an immersive look into a 3D world. </p>
+          <p>We have rendered a 3D scene in which the user can move around and observe several objects. 
+            So far, we have initialized our scene by creating a floor mesh, instantiating player obstacles, trees, scene lights, boundaries, ambient fog,  and also implemented movements such as turning left, up, right, and down. 
+            This experience is developed in the first-person perspective and provides an immersive look into a 3D world. </p>
         
           <h3><strong>Preliminary Results:</strong></h3>
           <div align="middle">
             <table style="width=100%">
               <tr>
                 <td>
-                  <img src="./images/prel1.png" align="left" width="400px" />
+                  <img src="./images/prel1.png" align="middle" width="60%" />
                 </td>
+              </tr>
+              <tr>
                 <td>
-                  <img src="./images/prel2.png" align="middle" width="400px" />
-
-                </td><td>
-                    <img src="./images/prel3.png" align="right" width="400px" />
-  
-                  </td>
+                  <img src="./images/prel2.png" align="middle" width="60%" />
+                </td>
+              </tr>
+              <tr>
+                <td>
+                    <img src="./images/prel3.png" align="middle" width="60%" />
+                 </td>
               </tr>
             </table>
           </div>
           <h3><strong>Milestone Demo Video:</strong></h3>
-            <p>https://drive.google.com/file/d/1tLSsWhIr-5-mBI4QeExajkUiKVJhcF1Q/view?usp=sharing</p>
+            <a href="https://drive.google.com/file/d/1tLSsWhIr-5-mBI4QeExajkUiKVJhcF1Q/view?usp=sharing">https://drive.google.com/file/d/1tLSsWhIr-5-mBI4QeExajkUiKVJhcF1Q/view?usp=sharing</a>
           <h3><strong>Reflection on current progress:</strong></h3>
-          <p>Reflecting on our current progress, our team bounced back a myriad of ideas such as a smoke simulator, water simulation, and our originally proposed idea of a first-person POV shooter game inspired by Valorant using Unity. Upon receiving our feedback, we’ve noticed that it was ambiguous as to what we intended to build on top of Unity and what we would be building on our own. To combat this, we focused on generating the entire scene from scratch and have a better understanding of what exactly we wanted to build. Now, we have currently built the foundation and bare bones of the project. Given that we have essentials like a 3D world and a first person point of view, we are free to focus on adding more intricate details. After we allow for the user to shoot projectiles at hostile entities, our plan indicates that we are working towards implementing motion blur, allowing for the player to shoot at enemies, implementing object collision, implementing a coin counter, and fleshing out the scene to follow the Super Mario Bros. theme and therefore, converting our scene into a playable game. </p>
-          
-          <h3><strong>Work Plan/Timeline:        </strong></h3>
-          <p>
-            1. Initialize scene and camera [DONE]
-            2. Instantiates all scene primitives [DONE]
-            3. Boundaries
-            4. 3D objects
-            5. Cubes (blocks)
-            6. Trees
-            7. Weapon [TO DO] 
-            8. Enemies [TO DO]
-            9. Coins [TO DO]
-            10. Lights
-            11. Floor mesh
-            12. Allow for player movement [DONE]
-            13. Allow for motion blur realism [TO DO]
-            14. Allow for user to shoot spheres [TO DO]
-            15. Implement object collision (sphere hitting enemy) calculations [TO DO]
-            16. Implement coin counter functionality [TO DO]
-            17. Flesh out the scene to mimic Super Mario Bros. theme [TO DO]
-            18. Add brick texture to brick blocks
-            19. Add “?” texture to coin blocks
-            20. Add coin texture to coins
-            21. Add 60-second timer HUD (heads up display) for player to shoot as many entities as possible 
-            22. Add yellow coins HUD (heads up display) to indicate player total number of coins
-            23. Add skybox to allow for immersive playing environment
-            </p>
+          <p>Reflecting on our current progress, our team bounced back a myriad of ideas such as a smoke simulator, water simulation, and our originally proposed idea of a first-person POV shooter game inspired by Valorant using Unity. 
+            Upon receiving our feedback, we’ve noticed that it was ambiguous as to what we intended to build on top of Unity and what we would be building on our own. 
+            To combat this, we focused on generating the entire scene from scratch and have a better understanding of what exactly we wanted to build. 
+            Now, we have currently built the foundation and bare bones of the project. 
+            Given that we have essentials like a 3D world and a first person point of view, we are free to focus on adding more intricate details. 
+            After we allow for the user to shoot projectiles at hostile entities, 
+            our plan indicates that we are working towards implementing motion blur, allowing for the player to shoot at enemies, implementing object collision, implementing a coin counter, and fleshing out the scene to follow the Super Mario Bros. theme and therefore, converting our scene into a playable game.</p>
+          <h3><strong>Work Plan/Timeline:</strong></h3>
+          <ol>
+            <li>Initialize scene and camera [DONE]</li>
+            <li>Instantiates all scene primitives [DONE]</li>
+
+            <ul>
+              <li>Boundaries</li>
+              <li>3D objects</li>
+              <li>Cubes (blocks)</li>
+              <li>Trees</li>
+              <li>Weapon</li>
+              <li>Enemies</li>
+              <li>Coins</li>
+            </ul>
+            
+            <li>Lights</li>
+            <li>Floor mesh</li>
+            <li>Allow for player movement [DONE]</li>
+            <li>Allow for motion blur realism [TO DO]</li>
+            <li>Allow for user to shoot spheres [TO DO]</li>
+            <li>Implement object collision (sphere hitting enemy) calculations [TO DO]</li>
+            <li>Implement coin counter functionality [TO DO]</li>
+            <li>Flesh out the scene to mimic Super Mario Bros. theme [TO DO]</li>
+            <ul>
+              <li>Add brick texture to brick blocks</li>
+              <li>Add “?” texture to coin blocks</li>
+              <li>Add coin texture to coins</li>
+              <li>Add 60-second timer HUD (heads up display) for player to shoot as many entities as possible</li>
+              <li>Add skybox to allow for immersive playing environment</li>
+            </ul>
+            </ol>
             <h3><strong>Technologies Used:</strong></h3>
             <p>Three.js and WebGL renderer</p>
             <h3><strong>Milestone Slides:</strong></h3>
-            <p>https://docs.google.com/presentation/d/1HkYqRMvv0SzdBrdi-ASd80F7m0sX0iDlMN_wa49xg6s/edit?usp=sharing</p>
+            <a href="https://docs.google.com/presentation/d/1HkYqRMvv0SzdBrdi-ASd80F7m0sX0iDlMN_wa49xg6s/edit?usp=sharing">Milestone Video</a>
             <h3><strong>Resources:</strong></h3>
-            <p>https://threejs.org</p>
-            <p>https://threejs.org/docs/#manual/en/introduction/Useful-links</p>
+            <div>
+              <a href="https://threejs.org">https://threejs.org</a><br>
+              <a href="https://threejs.org/docs/#manual/en/introduction/Useful-links">https://threejs.org/docs/#manual/en/introduction/Useful-links</a>
+            </div>
       </body>
 </html>
