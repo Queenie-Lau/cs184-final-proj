@@ -76,7 +76,7 @@ function initObjects() {
 	initTree(-7.5, -7.5, 2, 6, 7);
 
 	initCube(6, .5, -4, 3, 5, 1);
-	initCube(4, 1, -10, 5, 10, 1, purple);
+	initCube(4, 5, -10, 5, 10, 1, purple);
 	initCube(-4, 1, 0, 2, 2, 2, purple);
 }
 
