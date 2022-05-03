@@ -5,10 +5,10 @@ import * as THREE from './js/three.js';
 import { OrbitControls } from './js/OrbitControls.js';
 import { GLTFLoader } from './js/GLTFLoader.js';
 
-var renderer, scene, camera, meshCube, skybox, skyboxGeo; 
+var renderer, scene, camera, meshCube, skybox, skyboxGeo, floorTexture, pipeTexture; 
 
 var player = {height: 1.8, speed: 0.3, turnSpeed: Math.PI * 0.02};
-var platform = {width: 20, height: 30};
+var platform = {width: 50, height: 50};
 var keyboard = {};	
 
 var WIREFRAME = false;
@@ -49,9 +49,10 @@ function addSceneObjects() {
 	initBoundaries();
 	initObjects();
 	initLights();
+	texturizeFloor();
 	initFloor();
 	initCylinder();
-
+	intGoombaEnemies();
 	scene.fog = new THREE.Fog(0xDFE9F3, -10, 50);
 	scene.background = new THREE.Color("rgb(135, 206, 235)");
 }
@@ -59,7 +60,8 @@ function addSceneObjects() {
 // Instantiate the floor mesh
 function initFloor() {
 	const floorGeometry = new THREE.PlaneGeometry( platform.width, platform.height, 20);
-	const floorMaterial = new THREE.MeshPhongMaterial( {color: white, wireframe: WIREFRAME} )
+	//const floorMaterial = new THREE.MeshPhongMaterial( {color: white, wireframe: WIREFRAME} )
+	const floorMaterial = new THREE.MeshPhongMaterial({map : floorTexture, overdraw: 0.1})
 	const meshFloor = new THREE.Mesh( floorGeometry, floorMaterial );
 	meshFloor.rotation.x -= Math.PI / 2;
 	meshFloor.receiveShadow = true;
@@ -83,10 +85,18 @@ function initObjects() {
 }
 
 function initCylinder() {
-	const geometry = new THREE.CylinderGeometry( 1, 1, 1, 32 );
-	const material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
-	const cylinder = new THREE.Mesh( geometry, material );
-	cylinder.position.set(-10, 5, 4);
+	const geometry =  new THREE.CylinderGeometry( 1, 1, 5, 32, 1, false )
+
+	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/pipe.png" );
+	pipeTexture.wrapS = THREE.RepeatWrapping;
+	pipeTexture.wrapT = THREE.RepeatWrapping;
+	pipeTexture.repeat.set( 4, 4 );	
+
+	const pipeMaterial = new THREE.MeshPhongMaterial( {map : pipeTexture, overdraw: 0.9} );
+	const cylinder = new THREE.Mesh( geometry, pipeMaterial );
+	cylinder.position.set(0, 0, 0);
+	cylinder.castShadow = true;
+	cylinder.receiveShadow = true;
 	scene.add( cylinder );
 }
 
@@ -109,11 +119,18 @@ function initSpinningCube(x = 0, z = 0) {
 
 function initCube(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color = red) {
 	const geometry = new THREE.BoxGeometry(width, height, depth);
-	const material = new THREE.MeshPhongMaterial({color: color, wireframe: WIREFRAME});
-	const cube = new THREE.Mesh( geometry, material );
+
+	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/iwaa32.png" );
+	pipeTexture.wrapS = THREE.RepeatWrapping;
+	pipeTexture.wrapT = THREE.RepeatWrapping;
+	pipeTexture.repeat.set( 4, 4 );	
+
+	const wallMaterial = new THREE.MeshPhongMaterial({map : pipeTexture, overdraw: 0.1})
+	const cube = new THREE.Mesh( geometry, wallMaterial );
 	cube.position.set(x, y, z);
 	cube.receiveShadow = true;
 	cube.castShadow = true;
+
 	scene.add( cube );
 }
 
@@ -121,15 +138,26 @@ function initCube(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color =
 function initTree(x = 0, z = 0, width = 1.5, height = 4, scale = 5) {
 	var trunkRadius = width / scale; //Trunk should be 1/scale the width 
 	var trunkHeight = height / scale; // Trunk should be 1/scale the height
+
+	const treeBarkTexture = new THREE.TextureLoader().load( "assets/mario_assets/tree_xx01_Bark01_dif.png" );
+	treeBarkTexture.wrapS = THREE.RepeatWrapping;
+	treeBarkTexture.wrapT = THREE.RepeatWrapping;
+	treeBarkTexture.repeat.set( 4, 4 );	
+
+	const treeLeafTexture = new THREE.TextureLoader().load( "assets/mario_assets/tree_leaf.png" );
+	treeLeafTexture.wrapS = THREE.RepeatWrapping;
+	treeLeafTexture.wrapT = THREE.RepeatWrapping;
+	treeLeafTexture.repeat.set( 4, 4 );	
+
 	
 	const trunkGeometry = new THREE.CylinderGeometry( trunkRadius , trunkRadius, trunkHeight);
-	const trunkMaterial = new THREE.MeshPhongMaterial({ color: brown, wireframe: WIREFRAME });
+	const trunkMaterial = new THREE.MeshPhongMaterial({ map: treeBarkTexture, overdraw: 0.1 });
 	const treeTrunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
 	treeTrunk.position.set(x, trunkHeight / 2, z);
 	treeTrunk.receiveShadow = true;
 	treeTrunk.castShadow = true;
 	const leafGeometry = new THREE.ConeGeometry(width, height);
-	const leafMaterial = new THREE.MeshPhongMaterial({ color: green, wireframe: WIREFRAME });
+	const leafMaterial = new THREE.MeshPhongMaterial({ map: treeLeafTexture, overdraw: 0.1 });
 	const treeLeaves = new THREE.Mesh(leafGeometry, leafMaterial);
 	treeLeaves.position.set(x, trunkHeight + height / 2, z);
 	treeLeaves.receiveShadow = true;
@@ -194,10 +222,10 @@ function animate() {
 		camera.rotation.y -= player.turnSpeed;
 	}
 	if (keyboard[38]) { // Up arrow key
-		camera.rotation.x += player.turnSpeed;
+		camera.rotation.x -= player.turnSpeed;
 	}
 	if (keyboard[40]) { // Down arrow key 
-		camera.rotation.x -= player.turnSpeed;
+		camera.rotation.x += player.turnSpeed;
 	}
 
 	renderer.render( scene, camera );
@@ -221,33 +249,45 @@ function keyUp(event) {
 const loader = new GLTFLoader();
 
 // Load a glTF goomba enemey
-loader.load(
-	// resource URL
-	'assets/goomba/scene.gltf',
-	// called when the resource is loaded
-	function ( gltf ) {
-		gltf.scene.scale.set(0.005, 0.005, 0.005); 
-		gltf.scene.position.set(-5, 1, 4);
-		scene.add( gltf.scene );
+function intGoombaEnemies() {
+	loader.load(
+		// resource URL
+		'assets/goomba/scene.gltf',
+		// called when the resource is loaded
+		function ( gltf ) {
+			gltf.scene.scale.set(0.005, 0.005, 0.005); 
+			gltf.scene.position.set(-5, 1, 4);
+			gltf.scene.traverse( function( node ) {
+				if ( node.isMesh ) {
+					node.castShadow = true;
+				}
+			} );
+			scene.add( gltf.scene );
+	
+			gltf.animations; // Array<THREE.AnimationClip>
+			gltf.scene; // THREE.Group
+			gltf.scenes; // Array<THREE.Group>
+			gltf.cameras; // Array<THREE.Camera>
+			gltf.asset; // Object
+	
+		},
+		// called while loading is progressing
+		function ( xhr ) {
+			console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+		},
+		// called when loading has errors
+		function ( error ) {
+			console.log( 'An error happened' );
+		}
+	);
+}
 
-		gltf.animations; // Array<THREE.AnimationClip>
-		gltf.scene; // THREE.Group
-		gltf.scenes; // Array<THREE.Group>
-		gltf.cameras; // Array<THREE.Camera>
-		gltf.asset; // Object
-
-	},
-	// called while loading is progressing
-	function ( xhr ) {
-		console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
-	},
-	// called when loading has errors
-	function ( error ) {
-		console.log( 'An error happened' );
-	}
-);
-
-
+function texturizeFloor() {
+	floorTexture = new THREE.TextureLoader().load( "assets/mario_assets/grass_a1.png" );
+	floorTexture.wrapS = THREE.RepeatWrapping;
+	floorTexture.wrapT = THREE.RepeatWrapping;
+	floorTexture.repeat.set( 4, 4 );	
+}
 
 window.addEventListener('keydown', keyDown);
 window.addEventListener('keyup', keyUp);
