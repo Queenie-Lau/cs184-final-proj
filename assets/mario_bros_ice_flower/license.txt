@@ -1,0 +1,11 @@
+Model Information:
+* title:	Mario Bros Ice Flower
+* source:	https://sketchfab.com/3d-models/mario-bros-ice-flower-ecaea23bed8c4927a5eb6628004f3f5d
+* author:	Javi (https://sketchfab.com/JavierGomezGarcia)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Mario Bros Ice Flower" (https://sketchfab.com/3d-models/mario-bros-ice-flower-ecaea23bed8c4927a5eb6628004f3f5d) by Javi (https://sketchfab.com/JavierGomezGarcia) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -82,6 +82,8 @@ function initObjects() {
 	initTree(8, 8);
 	initTree(-6, 9, 1.5, 4, 7);
 	initTree(-7.5, -7.5, 2, 6, 7);
+	initCapsuleTree(.5, .5, -9, 0.4, 1);
+	initCapsuleTree(1, 1, 7, 0.4, 1);
 
 	initCube(6, .5, -4, 3, 5, 1, purple);
 	initCube(4, 5, -10, 5, 10, 1, purple);
@@ -91,6 +93,8 @@ function initObjects() {
 	initCoin(-5, 2, 4, .3, .3, .1, 32, 1, false);
 	initCoin(3, 2, 4, .3, .3, .1, 32, 1, false);
 	addCoinsRandomly(); // DO COLLISION CHECKS
+	// initSceneDecor(); // takes up a lot of mem.
+	// addDecorRandomly(); // DO COLLISION CHECKS
 
 	initSphere(); // Player will be shooting tennis? balls
 }
@@ -211,6 +215,21 @@ function initCube(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color =
 	return cube;
 }
 
+function initCapsuleTree(radius = .1, length = .1, x = 0, y = 0, z = 0) {
+	const treeLeafTexture = new THREE.TextureLoader().load( "assets/mario_assets/tree_leaf.png" );
+	treeLeafTexture.wrapS = THREE.RepeatWrapping;
+	treeLeafTexture.wrapT = THREE.RepeatWrapping;
+	treeLeafTexture.repeat.set( 4, 4 );	
+
+	const leafGeometry = new THREE.CapsuleGeometry(radius, length, 32, 32);
+	const leafMaterial = new THREE.MeshPhongMaterial({ map: treeLeafTexture });
+	const treeLeaves = new THREE.Mesh(leafGeometry, leafMaterial);
+	treeLeaves.position.set(x, y, z);
+	treeLeaves.receiveShadow = true;
+	treeLeaves.castShadow = true;
+	scene.add(treeLeaves);
+}
+
 // Instantiates a tree at given coordinates and scale
 function initTree(x = 0, z = 0, width = 1.5, height = 4, scale = 5) {
 	var trunkRadius = width / scale; //Trunk should be 1/scale the width 
@@ -273,6 +292,14 @@ function addCoinsRandomly() {
 		var ranX = Math.floor(Math.random() * platform.width - 10) + -5;
 		var ranZ = Math.floor(Math.random() * platform.width - 10) - 5;
 		initCoin(ranX, 2, ranZ, .3, .3, .1, 32, 1, false);
+	}
+}
+
+function addDecorRandomly() {
+	for (let i = 0; i < 20; i++) {
+		var ranX = Math.floor(Math.random() * platform.width - 10) + -5;
+		var ranZ = Math.floor(Math.random() * platform.width - 10) - 5;
+		initSceneDecor(ranX, ranZ);
 	}
 }
 
@@ -382,6 +409,36 @@ function texturizeFloor() {
 	floorTexture.wrapS = THREE.RepeatWrapping;
 	floorTexture.wrapT = THREE.RepeatWrapping;
 	floorTexture.repeat.set( 4, 4 );	
+}
+
+function initSceneDecor(x = 0, z = 0) {
+	loader.load(
+		// resource URL
+		'assets/mario_bros_ice_flower/scene.gltf',
+		function ( gltf ) {
+			gltf.scene.scale.set(0.5, 0.5, 0.5); 
+			gltf.scene.position.set(x, 0.5, z);
+			gltf.scene.traverse( function( node ) {
+				if ( node.isMesh ) {
+					node.castShadow = true;
+				}
+			} );		
+			scene.add( gltf.scene );
+	});
+
+	loader.load(
+		// resource URL
+		'assets/fire_flower_super_mario_bros/scene.gltf',
+		function ( gltf ) {
+			gltf.scene.scale.set(0.003, 0.003, 0.003); 
+			gltf.scene.position.set(x, 0.01, z);
+			gltf.scene.traverse( function( node ) {
+				if ( node.isMesh ) {
+					node.castShadow = true;
+				}
+			} );		
+			scene.add( gltf.scene );
+	});
 }
 
 window.addEventListener('keydown', keyDown);
