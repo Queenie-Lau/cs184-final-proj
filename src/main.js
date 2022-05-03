@@ -67,6 +67,12 @@ function initFloor() {
 	//const floorMaterial = new THREE.MeshPhongMaterial( {color: white, wireframe: WIREFRAME} )
 	const floorMaterial = new THREE.MeshPhongMaterial({map : floorTexture})
 	const meshFloor = new THREE.Mesh( floorGeometry, floorMaterial );
+
+	// const displacementMap = new THREE.TextureLoader().load(
+	// 	'assets/mario_assets/grass_displacement.jpg'
+	// )
+	// floorMaterial.displacementMap = displacementMap
+
 	meshFloor.rotation.x -= Math.PI / 2;
 	meshFloor.receiveShadow = true;
 	scene.add(meshFloor);
@@ -84,11 +90,11 @@ function initObjects() {
 	initCapsuleTree(.5, .5, -9, 0.4, 1);
 	initCapsuleTree(1, 1, 7, 0.4, 1);
 
-	initBricks(6, .5, -4, 3, 5, 1, purple);
-	initBricks(4, 5, -10, 5, 10, 1, purple);
-	initBricks(-4, 1, 0, 2, 2, 2, purple);
+	initBricks(6, .5, -4, .7, .7, .7, brown);
+	initBricks(4, 5, -10, .7, .7, .7, brown);
+	initBricks(-4, 1, 0, .7, .7, .7, brown);
 
-	initPowerUpBox(4, 3, 5, .7, .5, .7);
+	initPowerUpBox(4, 3, 5, .7, .7, .7);
 	initPowerUpBox(10, 3, 5, .7, .7, .7);
 	initPowerUpBox(-4, 3, 5, .7, .7, .7);
 	
@@ -96,8 +102,8 @@ function initObjects() {
 	initCoin(-5, 2, 4, .3, .3, .1, 32, 1, false);
 	initCoin(3, 2, 4, .3, .3, .1, 32, 1, false);
 	addCoinsRandomly(); // DO COLLISION CHECKS
-	// initSceneDecor(); // takes up a lot of mem.
-	// addDecorRandomly(); // DO COLLISION CHECKS
+	initSceneDecor(-10, 15);
+	// addDecorRandomly(); // DO COLLISION CHECKS, takes up a lot of mem.
 
 	initSphere(); // Player will be shooting tennis? balls
 }
@@ -163,12 +169,12 @@ function initTorusForPipe(x = 0, y = 0, z = 0, radius = 1, tube = .2, radialSegm
 
 function initSkyBox() {
 	const materialTextures = [];
-	const front = new THREE.TextureLoader().load("assets/mario_assets/water.png");
+	const front = new THREE.TextureLoader().load("assets/mario_assets/water_mod.png");
 	const back = new THREE.TextureLoader().load("assets/mario_assets/water.png");
-	const up = new THREE.TextureLoader().load("assets/mario_assets/water.png");
-	const down = new THREE.TextureLoader().load("assets/mario_assets/water.png");
-	const right = new THREE.TextureLoader().load("assets/mario_assets/water.png");
-	const left = new THREE.TextureLoader().load("assets/mario_assets/water.png");
+	const up = new THREE.TextureLoader().load("assets/mario_assets/water_top.png");
+	const down = new THREE.TextureLoader().load("assets/mario_assets/water_bottom.png");
+	const right = new THREE.TextureLoader().load("assets/mario_assets/water_mod.png");
+	const left = new THREE.TextureLoader().load("assets/mario_assets/water_mod.png");
 
 	materialTextures.push(new THREE.MeshBasicMaterial({ map: front }));
 	materialTextures.push(new THREE.MeshBasicMaterial({ map: back }));
@@ -196,7 +202,7 @@ function initSkyBox() {
 // 	scene.add( meshCube );
 // }
 
-function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color = red) {
+function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1) {
 	const geometry = new THREE.BoxGeometry(width, height, depth);
 
 	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/brick.png" );
@@ -439,7 +445,7 @@ function initSceneDecor(x = 0, z = 0) {
 		'assets/mario_bros_ice_flower/scene.gltf',
 		function ( gltf ) {
 			gltf.scene.scale.set(0.5, 0.5, 0.5); 
-			gltf.scene.position.set(x, 0.5, z);
+			gltf.scene.position.set(x + 3, 0.5, z);
 			gltf.scene.traverse( function( node ) {
 				if ( node.isMesh ) {
 					node.castShadow = true;
@@ -448,19 +454,19 @@ function initSceneDecor(x = 0, z = 0) {
 			scene.add( gltf.scene );
 	});
 
-	loader.load(
-		// resource URL
-		'assets/fire_flower_super_mario_bros/scene.gltf',
-		function ( gltf ) {
-			gltf.scene.scale.set(0.003, 0.003, 0.003); 
-			gltf.scene.position.set(x, 0.01, z);
-			gltf.scene.traverse( function( node ) {
-				if ( node.isMesh ) {
-					node.castShadow = true;
-				}
-			} );		
-			scene.add( gltf.scene );
-	});
+	// loader.load(
+	// 	// resource URL
+	// 	'assets/fire_flower_super_mario_bros/scene.gltf',
+	// 	function ( gltf ) {
+	// 		gltf.scene.scale.set(0.003, 0.003, 0.003); 
+	// 		gltf.scene.position.set(x, 0.01, z);
+	// 		gltf.scene.traverse( function( node ) {
+	// 			if ( node.isMesh ) {
+	// 				node.castShadow = true;
+	// 			}
+	// 		} );		
+	// 		scene.add( gltf.scene );
+	// });
 }
 
 window.addEventListener('keydown', keyDown);
