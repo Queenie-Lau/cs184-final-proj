@@ -121,7 +121,7 @@ function initSphere() {
 function initCoin(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height = 5, radialSegments = 32, heightSegments = 1, openEnded = false) {
 	const geometry =  new THREE.CylinderGeometry( radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded )
 
-	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/coin.png" );
+	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/coin_test.png" );
 	pipeTexture.wrapS = THREE.RepeatWrapping;
 	pipeTexture.wrapT = THREE.RepeatWrapping;
 
