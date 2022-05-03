@@ -5,7 +5,7 @@ import * as THREE from './js/three.js';
 import { OrbitControls } from './js/OrbitControls.js';
 import { GLTFLoader } from './js/GLTFLoader.js';
 
-var renderer, scene, camera, controls, meshCube, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer, coinsGroup; 
+var renderer, scene, camera, controls, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer, coinsGroup; 
 
 var player = {height: 1.8, speed: 0.3, turnSpeed: Math.PI * 0.02};
 var platform = {width: 50, height: 50};
@@ -74,7 +74,6 @@ function initFloor() {
 
 // Instantiate player obstacles
 function initObjects() {
-	// initSpinningCube(2, 8);
 	initTree(-3, -6, 2.5, 6);
 	initTree(5, 5, 1, 8);
 	initTree(3, 3);
@@ -85,10 +84,14 @@ function initObjects() {
 	initCapsuleTree(.5, .5, -9, 0.4, 1);
 	initCapsuleTree(1, 1, 7, 0.4, 1);
 
-	initCube(6, .5, -4, 3, 5, 1, purple);
-	initCube(4, 5, -10, 5, 10, 1, purple);
-	initCube(-4, 1, 0, 2, 2, 2, purple);
+	initBricks(6, .5, -4, 3, 5, 1, purple);
+	initBricks(4, 5, -10, 5, 10, 1, purple);
+	initBricks(-4, 1, 0, 2, 2, 2, purple);
 
+	initPowerUpBox(4, 3, 5, .7, .5, .7);
+	initPowerUpBox(10, 3, 5, .7, .7, .7);
+	initPowerUpBox(-4, 3, 5, .7, .7, .7);
+	
 	initCoin(-18, 2, 0, .3, .3, .1, 32, 1, false);
 	initCoin(-5, 2, 4, .3, .3, .1, 32, 1, false);
 	initCoin(3, 2, 4, .3, .3, .1, 32, 1, false);
@@ -193,7 +196,7 @@ function initSkyBox() {
 // 	scene.add( meshCube );
 // }
 
-function initCube(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color = red) {
+function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color = red) {
 	const geometry = new THREE.BoxGeometry(width, height, depth);
 
 	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/brick.png" );
@@ -213,6 +216,22 @@ function initCube(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color =
 	scene.add( cube );
 
 	return cube;
+}
+
+function initPowerUpBox(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1) {
+	const geometry = new THREE.BoxGeometry(width, height, depth);
+
+	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/question_box.png" );
+	pipeTexture.wrapS = THREE.RepeatWrapping;
+	pipeTexture.wrapT = THREE.RepeatWrapping;
+
+	const wallMaterial = new THREE.MeshPhongMaterial({map : pipeTexture})
+	const cube = new THREE.Mesh( geometry, wallMaterial );
+	cube.position.set(x, y, z);
+	cube.receiveShadow = true;
+	cube.castShadow = true;
+	
+	scene.add( cube );
 }
 
 function initCapsuleTree(radius = .1, length = .1, x = 0, y = 0, z = 0) {
@@ -264,8 +283,10 @@ function initTree(x = 0, z = 0, width = 1.5, height = 4, scale = 5) {
 
 // Instantiate scene lights
 function initLights() {
-	const ambientLight = new THREE.AmbientLight(white, 0.3);
+	const ambientLight = new THREE.AmbientLight(white, 0.2);
 	const pointLight = new THREE.PointLight(white, 0.8, 18);
+	const hemisphereLight = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
+	
 	pointLight.position.set(-3, 6, -3);
 	pointLight.castShadow = true;
 	pointLight.shadow.camera.near = 0.1;
@@ -273,14 +294,15 @@ function initLights() {
 
 	scene.add(pointLight);
 	scene.add(ambientLight);
+	scene.add( hemisphereLight );
 }
 
 // Instantiate boundaries
 function initBoundaries(color = blue) {
-	initCube(0, 0, platform.height / 2, platform.width + 1, 1.5, 1, color);
-	initCube(0, 0, -platform.height / 2, platform.width + 1, 1.5, 1, color);
-	initCube(platform.width / 2, 0, 0, 1, 1.5, platform.height, color);
-	initCube(-platform.width / 2, 0, 0, 1, 1.5, platform.height, color);
+	initBricks(0, 0, platform.height / 2, platform.width + 1, 1.5, 1, color);
+	initBricks(0, 0, -platform.height / 2, platform.width + 1, 1.5, 1, color);
+	initBricks(platform.width / 2, 0, 0, 1, 1.5, platform.height, color);
+	initBricks(-platform.width / 2, 0, 0, 1, 1.5, platform.height, color);
 }
 
 function checkCollisions(cube) {
