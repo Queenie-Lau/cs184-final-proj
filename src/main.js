@@ -9,8 +9,10 @@ var renderer, scene, camera, controls, skybox, skyboxGeo, floorTexture, pipeText
 
 var player = {height: 1.8, speed: 0.3, turnSpeed: Math.PI * 0.02};
 var platform = {width: 50, height: 50};
+var velocity = new THREE.Vector3();
 var keyboard = {};	
 clock = new THREE.Clock();
+var prevTime = performance.now();
 
 var WIREFRAME = false;
 
@@ -55,6 +57,7 @@ function addSceneObjects() {
 	texturizeFloor();
 	initFloor();
 	initCylinderPipes();
+	initPlayerGun();
 	initGoombaEnemies();
 	initSkyBox();
 	scene.fog = new THREE.Fog(0xDFE9F3, -40, 100);
@@ -330,8 +333,31 @@ function addDecorRandomly() {
 	}
 }
 
+function initPlayerGun() {
+	loader.load(
+		// resource URL
+		'assets/toy_gun/scene.gltf',
+		function ( gltf ) {
+			gltf.scene.scale.set(.2, .2, .2); 
+			gltf.scene.position.set(camera.position.x, camera.position.y, camera.position.z);
+			gltf.scene.traverse( function( node ) {
+				if ( node.isMesh ) {
+					node.castShadow = true;
+				}
+			} );
+			gltf.scene.rotateX(-90);		
+			scene.add( gltf.scene );
+	});
+}
+
 function animate() {
 	requestAnimationFrame(animate);
+	const time = performance.now();
+	const time_step_diff = ( time - prevTime ) / 1000;
+	velocity.x -= velocity.x * 10.0 * time_step_diff;
+	velocity.z -= velocity.z * 10.0 * time_step_diff;
+	velocity.y -= 9.8 * 100.0 * time_step_diff; // 100.0 = mass
+
 	coinsGroup.children.forEach(child => {
 		child.rotateZ(-0.1);
 	});
@@ -367,15 +393,16 @@ function animate() {
 	}
 	// JUMPING - TODO
 	if (keyboard[32]) { // Space bar key
-		var velocityY = 0;
-		var maxVelelocityY = 6;
-		var inertia = 0.92;
-		var gravity = .3;
+		// var velocityY = 0;
+		// var maxVelelocityY = 6;
+		// var inertia = 0.92;
+		// var gravity = .3;
 
-		velocityY = -maxVelelocityY; // init velocity
-		velocityY+= gravity;
-		velocityY*= inertia; 
-		camera.rotation.y += velocityY;
+		// velocityY = -maxVelelocityY; // init velocity
+		// velocityY+= gravity;
+		// velocityY*= inertia; 
+		// camera.rotation.y += velocityY;
+		velocity.y += 350;
 	}
 
 	renderer.render( scene, camera );
