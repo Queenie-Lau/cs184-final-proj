@@ -5,7 +5,7 @@ import * as THREE from './js/three.js';
 import { OrbitControls } from './js/OrbitControls.js';
 import { GLTFLoader } from './js/GLTFLoader.js';
 
-var renderer, scene, camera, meshCube, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer; 
+var renderer, scene, camera, controls, meshCube, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer; 
 
 var player = {height: 1.8, speed: 0.3, turnSpeed: Math.PI * 0.02};
 var platform = {width: 50, height: 50};
@@ -42,7 +42,7 @@ function main() {
 	renderer.shadowMap.type = THREE.BasicShadowMap;
 	document.body.appendChild( renderer.domElement );
 
-	var controls = new OrbitControls( camera, renderer.domElement );
+	controls = new OrbitControls( camera, renderer.domElement );
 	controls.addEventListener('change', renderer);
 	animate();
 }
@@ -54,7 +54,7 @@ function addSceneObjects() {
 	initLights();
 	texturizeFloor();
 	initFloor();
-	initCylinder();
+	initCylinderPipes();
 	initGoombaEnemies();
 	initSkyBox();
 	scene.fog = new THREE.Fog(0xDFE9F3, -40, 100);
@@ -86,10 +86,42 @@ function initObjects() {
 	initCube(6, .5, -4, 3, 5, 1);
 	initCube(4, 5, -10, 5, 10, 1, purple);
 	initCube(-4, 1, 0, 2, 2, 2, purple);
+
+	initCoin(-18, 2, 0, .3, .3, .1, 32, 1, false);
+	initCoin(-5, 2, 4, .3, .3, .1, 32, 1, false);
+	initCoin(3, 2, 4, .3, .3, .1, 32, 1, false);
+	addCoinsRandomly(); // DO COLLISION CHECKS
+
+	initSphere(); // Player will be shooting tennis? balls
 }
 
-function initCylinder() {
-	const geometry =  new THREE.CylinderGeometry( 1, 1, 5, 32, 1, false )
+function initSphere() {
+	const sphere = new THREE.Mesh(new THREE.SphereGeometry(1), new THREE.MeshPhongMaterial( { color: 0xff5191 }));
+	sphere.position.set(-10, 10, 0);
+	sphere.castShadow = true;
+	sphere.receiveShadow = true;
+
+	let sphereBoundingBox = new THREE.Sphere(sphere.position, 1);
+}
+
+function initCoin(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height = 5, radialSegments = 32, heightSegments = 1, openEnded = false) {
+	const geometry =  new THREE.CylinderGeometry( radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded )
+
+	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/coin.png" );
+	pipeTexture.wrapS = THREE.RepeatWrapping;
+	pipeTexture.wrapT = THREE.RepeatWrapping;
+
+	const pipeMaterial = new THREE.MeshPhongMaterial( {map : pipeTexture} );
+	const cylinder = new THREE.Mesh( geometry, pipeMaterial );
+	cylinder.position.set(x, y, z);
+	cylinder.rotateX(-80.1);
+	cylinder.castShadow = true;
+	cylinder.receiveShadow = true;
+	scene.add( cylinder );
+}
+
+function initCylinderPipes(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height = 5, radialSegments = 32, heightSegments = 1, openEnded = false) {
+	const geometry =  new THREE.CylinderGeometry( radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded )
 
 	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/pipe.png" );
 	pipeTexture.wrapS = THREE.RepeatWrapping;
@@ -98,9 +130,13 @@ function initCylinder() {
 
 	const pipeMaterial = new THREE.MeshPhongMaterial( {map : pipeTexture} );
 	const cylinder = new THREE.Mesh( geometry, pipeMaterial );
-	cylinder.position.set(0, 0, 0);
+	cylinder.position.set(x, y, z);
 	cylinder.castShadow = true;
 	cylinder.receiveShadow = true;
+
+	let cylinderBoundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+	cylinderBoundingBox.setFromObject(cylinder);
+
 	scene.add( cylinder );
 }
 
@@ -153,7 +189,12 @@ function initCube(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color =
 	cube.receiveShadow = true;
 	cube.castShadow = true;
 
+	let cubeBoundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+	cubeBoundingBox.setFromObject(cube);
+	
 	scene.add( cube );
+
+	return cube;
 }
 
 // Instantiates a tree at given coordinates and scale
@@ -209,11 +250,20 @@ function initBoundaries(color = blue) {
 	initCube(-platform.width / 2, 0, 0, 1, 1.5, platform.height, color);
 }
 
+function checkCollisions(cube) {
+	// TO DO
+}
+
+function addCoinsRandomly() {
+	for (let i = 0; i < 50; i++) {
+		var ranX = Math.floor(Math.random() * platform.width - 10) + -5;
+		var ranZ = Math.floor(Math.random() * platform.width - 10) - 5;
+		initCoin(ranX, 2, ranZ, .3, .3, .1, 32, 1, false);
+	}
+}
+
 function animate() {
 	requestAnimationFrame(animate);
-	// meshCube.rotation.x += 0.01;
-	// meshCube.rotation.y += 0.02;
-
 	// MOVEMENT 
 	if (keyboard[87]) { // W key
 		camera.position.x -= Math.sin(camera.rotation.y) * player.speed;
@@ -244,6 +294,18 @@ function animate() {
 	if (keyboard[40]) { // Down arrow key 
 		camera.rotation.x -= player.turnSpeed;
 	}
+	// JUMPING - TODO
+	if (keyboard[32]) { // Space bar key
+		var velocityY = 0;
+		var maxVelelocityY = 6;
+		var inertia = 0.92;
+		var gravity = .3;
+
+		velocityY = -maxVelelocityY; // init velocity
+		velocityY+= gravity;
+		velocityY*= inertia; 
+		camera.rotation.y += velocityY;
+	}
 
 	renderer.render( scene, camera );
 	var delta = clock.getDelta();
@@ -257,12 +319,6 @@ function keyDown(event) {
 function keyUp(event) {
 	keyboard[event.keyCode] = false;
 }
-
-
-/**
- * TODO: Put goomba animation in another file
- * 
- */
 
 // Instantiate a loader
 const loader = new GLTFLoader();
@@ -285,13 +341,13 @@ function initGoombaEnemies() {
 			mixer = new THREE.AnimationMixer(gltf.scene);
     		var action = mixer.clipAction( gltf.animations[ 0 ] );
 			action.play();
+			
 			scene.add( gltf.scene );
 
 			gltf.scene; // THREE.Group
 			gltf.scenes; // Array<THREE.Group>
 			gltf.cameras; // Array<THREE.Camera>
 			gltf.asset; // Object
-
 		},
 		// called while loading is progressing
 		function ( xhr ) {
