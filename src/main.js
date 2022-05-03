@@ -23,16 +23,18 @@ var purple = 0x6a0dad;
 // initialize scene
 function main() {
 	//Create and position the camera
-	camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 30 );
+	camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 30000 );
 	camera.position.set(0, player.height, -5);
 	camera.lookAt(new THREE.Vector3(0,player.height,0));
 
 	scene = new THREE.Scene();
-	addSceneObjects();
 
 	// Instantiate the renderer
 	renderer = new THREE.WebGLRenderer( { antialias: true } );
 	renderer.setSize( window.innerWidth, window.innerHeight );
+
+	// Add scene objects
+	addSceneObjects();
 
 	// Add Shadow Map 
 	renderer.shadowMap.enabled = true;
@@ -40,12 +42,12 @@ function main() {
 	document.body.appendChild( renderer.domElement );
 
 	var controls = new OrbitControls( camera, renderer.domElement );
+	controls.addEventListener('change', renderer);
 	animate();
 }
 
 // Instantiates all scene primitives
 function addSceneObjects() {
-	initSkyBox();
 	initBoundaries();
 	initObjects();
 	initLights();
@@ -53,7 +55,8 @@ function addSceneObjects() {
 	initFloor();
 	initCylinder();
 	intGoombaEnemies();
-	scene.fog = new THREE.Fog(0xDFE9F3, -10, 50);
+	initSkyBox();
+	scene.fog = new THREE.Fog(0xDFE9F3, -40, 100);
 	scene.background = new THREE.Color("rgb(135, 206, 235)");
 }
 
@@ -61,7 +64,7 @@ function addSceneObjects() {
 function initFloor() {
 	const floorGeometry = new THREE.PlaneGeometry( platform.width, platform.height, 20);
 	//const floorMaterial = new THREE.MeshPhongMaterial( {color: white, wireframe: WIREFRAME} )
-	const floorMaterial = new THREE.MeshPhongMaterial({map : floorTexture, overdraw: 0.1})
+	const floorMaterial = new THREE.MeshPhongMaterial({map : floorTexture})
 	const meshFloor = new THREE.Mesh( floorGeometry, floorMaterial );
 	meshFloor.rotation.x -= Math.PI / 2;
 	meshFloor.receiveShadow = true;
@@ -92,7 +95,7 @@ function initCylinder() {
 	pipeTexture.wrapT = THREE.RepeatWrapping;
 	pipeTexture.repeat.set( 4, 4 );	
 
-	const pipeMaterial = new THREE.MeshPhongMaterial( {map : pipeTexture, overdraw: 0.9} );
+	const pipeMaterial = new THREE.MeshPhongMaterial( {map : pipeTexture} );
 	const cylinder = new THREE.Mesh( geometry, pipeMaterial );
 	cylinder.position.set(0, 0, 0);
 	cylinder.castShadow = true;
@@ -101,10 +104,28 @@ function initCylinder() {
 }
 
 function initSkyBox() {
-	skyboxGeo = new THREE.BoxGeometry(10000, 10000, 10000);
-	skybox = new THREE.Mesh(skyboxGeo);
+	const materialTextures = [];
+	const front = new THREE.TextureLoader().load("assets/mario_assets/water.png");
+	const back = new THREE.TextureLoader().load("assets/mario_assets/water.png");
+	const up = new THREE.TextureLoader().load("assets/mario_assets/water.png");
+	const down = new THREE.TextureLoader().load("assets/mario_assets/water.png");
+	const right = new THREE.TextureLoader().load("assets/mario_assets/water.png");
+	const left = new THREE.TextureLoader().load("assets/mario_assets/water.png");
+
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: front }));
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: back }));
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: up }));
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: down }));
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: right }));
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: left }));
+
+	for (let i = 0; i < 6; i++) {
+		materialTextures[i].side = THREE.BackSide;
+	}
+
+	skyboxGeo = new THREE.BoxGeometry(100, 100, 100);
+	skybox = new THREE.Mesh(skyboxGeo, materialTextures);
 	scene.add(skybox);
-	animateSkyBox();
 }
 
 function initSpinningCube(x = 0, z = 0) {
@@ -125,7 +146,7 @@ function initCube(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color =
 	pipeTexture.wrapT = THREE.RepeatWrapping;
 	pipeTexture.repeat.set( 4, 4 );	
 
-	const wallMaterial = new THREE.MeshPhongMaterial({map : pipeTexture, overdraw: 0.1})
+	const wallMaterial = new THREE.MeshPhongMaterial({map : pipeTexture})
 	const cube = new THREE.Mesh( geometry, wallMaterial );
 	cube.position.set(x, y, z);
 	cube.receiveShadow = true;
@@ -157,7 +178,7 @@ function initTree(x = 0, z = 0, width = 1.5, height = 4, scale = 5) {
 	treeTrunk.receiveShadow = true;
 	treeTrunk.castShadow = true;
 	const leafGeometry = new THREE.ConeGeometry(width, height);
-	const leafMaterial = new THREE.MeshPhongMaterial({ map: treeLeafTexture, overdraw: 0.1 });
+	const leafMaterial = new THREE.MeshPhongMaterial({ map: treeLeafTexture });
 	const treeLeaves = new THREE.Mesh(leafGeometry, leafMaterial);
 	treeLeaves.position.set(x, trunkHeight + height / 2, z);
 	treeLeaves.receiveShadow = true;
@@ -187,15 +208,10 @@ function initBoundaries(color = blue) {
 	initCube(-platform.width / 2, 0, 0, 1, 1.5, platform.height, color);
 }
 
-function animateSkyBox() {
-	skybox.rotation.x += 0.005;
-	skybox.rotation.y += 0.005;
-}
-
 function animate() {
 	requestAnimationFrame(animate);
-	meshCube.rotation.x += 0.01;
-	meshCube.rotation.y += 0.02;
+	// meshCube.rotation.x += 0.01;
+	// meshCube.rotation.y += 0.02;
 
 	// MOVEMENT 
 	if (keyboard[87]) { // W key
