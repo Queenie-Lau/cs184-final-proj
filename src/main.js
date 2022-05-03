@@ -5,9 +5,9 @@ import * as THREE from './js/three.js';
 import { OrbitControls } from './js/OrbitControls.js';
 import { GLTFLoader } from './js/GLTFLoader.js';
 
-var renderer, scene, camera, meshCube; 
+var renderer, scene, camera, meshCube, skybox, skyboxGeo; 
 
-var player = {height: 1.8, speed: 0.2, turnSpeed: Math.PI * 0.02};
+var player = {height: 1.8, speed: 0.3, turnSpeed: Math.PI * 0.02};
 var platform = {width: 20, height: 30};
 var keyboard = {};	
 
@@ -27,14 +27,12 @@ function main() {
 	camera.position.set(0, player.height, -5);
 	camera.lookAt(new THREE.Vector3(0,player.height,0));
 
-
 	scene = new THREE.Scene();
 	addSceneObjects();
 
 	// Instantiate the renderer
 	renderer = new THREE.WebGLRenderer( { antialias: true } );
 	renderer.setSize( window.innerWidth, window.innerHeight );
-
 
 	// Add Shadow Map 
 	renderer.shadowMap.enabled = true;
@@ -47,17 +45,20 @@ function main() {
 
 // Instantiates all scene primitives
 function addSceneObjects() {
+	initSkyBox();
 	initBoundaries();
 	initObjects();
 	initLights();
 	initFloor();
+	initCylinder();
+
 	scene.fog = new THREE.Fog(0xDFE9F3, -10, 50);
 	scene.background = new THREE.Color("rgb(135, 206, 235)");
 }
 
 // Instantiate the floor mesh
 function initFloor() {
-	const floorGeometry = new THREE.PlaneGeometry( platform.width, platform.height );
+	const floorGeometry = new THREE.PlaneGeometry( platform.width, platform.height, 20);
 	const floorMaterial = new THREE.MeshPhongMaterial( {color: white, wireframe: WIREFRAME} )
 	const meshFloor = new THREE.Mesh( floorGeometry, floorMaterial );
 	meshFloor.rotation.x -= Math.PI / 2;
@@ -81,6 +82,21 @@ function initObjects() {
 	initCube(-4, 1, 0, 2, 2, 2, purple);
 }
 
+function initCylinder() {
+	const geometry = new THREE.CylinderGeometry( 1, 1, 1, 32 );
+	const material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+	const cylinder = new THREE.Mesh( geometry, material );
+	cylinder.position.set(-10, 5, 4);
+	scene.add( cylinder );
+}
+
+function initSkyBox() {
+	skyboxGeo = new THREE.BoxGeometry(10000, 10000, 10000);
+	skybox = new THREE.Mesh(skyboxGeo);
+	scene.add(skybox);
+	animateSkyBox();
+}
+
 function initSpinningCube(x = 0, z = 0) {
 	const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
 	const cubeMaterial = new THREE.MeshPhongMaterial({color: red, wireframe: WIREFRAME});
@@ -89,7 +105,6 @@ function initSpinningCube(x = 0, z = 0) {
 	meshCube.receiveShadow = true;
 	meshCube.castShadow = true;
 	scene.add( meshCube );
-
 }
 
 function initCube(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color = red) {
@@ -100,7 +115,6 @@ function initCube(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color =
 	cube.receiveShadow = true;
 	cube.castShadow = true;
 	scene.add( cube );
-
 }
 
 // Instantiates a tree at given coordinates and scale
@@ -145,6 +159,11 @@ function initBoundaries(color = blue) {
 	initCube(-platform.width / 2, 0, 0, 1, 1.5, platform.height, color);
 }
 
+function animateSkyBox() {
+	skybox.rotation.x += 0.005;
+	skybox.rotation.y += 0.005;
+}
+
 function animate() {
 	requestAnimationFrame(animate);
 	meshCube.rotation.x += 0.01;
@@ -184,7 +203,6 @@ function animate() {
 	renderer.render( scene, camera );
 }
 
-
 function keyDown(event) {
 	keyboard[event.keyCode] = true;
 }
@@ -193,16 +211,23 @@ function keyUp(event) {
 	keyboard[event.keyCode] = false;
 }
 
+
+/**
+ * TODO: Put goomba animation in another file
+ * 
+ */
+
 // Instantiate a loader
 const loader = new GLTFLoader();
 
-// Load a glTF resource
+// Load a glTF goomba enemey
 loader.load(
 	// resource URL
 	'assets/goomba/scene.gltf',
 	// called when the resource is loaded
 	function ( gltf ) {
-		gltf.scene.scale.set(0.001, 0.001, 0.001); 
+		gltf.scene.scale.set(0.005, 0.005, 0.005); 
+		gltf.scene.position.set(-5, 1, 4);
 		scene.add( gltf.scene );
 
 		gltf.animations; // Array<THREE.AnimationClip>
@@ -214,15 +239,11 @@ loader.load(
 	},
 	// called while loading is progressing
 	function ( xhr ) {
-
 		console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
-
 	},
 	// called when loading has errors
 	function ( error ) {
-
 		console.log( 'An error happened' );
-
 	}
 );
 
