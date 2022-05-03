@@ -44,7 +44,6 @@ function main() {
 	document.body.appendChild( renderer.domElement );
 
 	controls = new OrbitControls( camera, renderer.domElement );
-	controls.addEventListener('change', renderer);
 	animate();
 }
 
