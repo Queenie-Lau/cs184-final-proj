@@ -290,9 +290,8 @@ function initTree(x = 0, z = 0, width = 1.5, height = 4, scale = 5) {
 
 // Instantiate scene lights
 function initLights() {
-	const ambientLight = new THREE.AmbientLight(white, 0.2);
+	const ambientLight = new THREE.AmbientLight(white, 0.5);
 	const pointLight = new THREE.PointLight(white, 0.8, 18);
-	const hemisphereLight = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
 	
 	pointLight.position.set(-3, 6, -3);
 	pointLight.castShadow = true;
@@ -301,7 +300,6 @@ function initLights() {
 
 	scene.add(pointLight);
 	scene.add(ambientLight);
-	scene.add( hemisphereLight );
 }
 
 // Instantiate boundaries
@@ -404,7 +402,7 @@ function initGoombaEnemies() {
 		// called when the resource is loaded
 		function ( gltf ) {
 			gltf.scene.scale.set(0.02, 0.02, 0.02); 
-			gltf.scene.position.set(0, 0.1, 4);
+			gltf.scene.position.set(-5, 0.1, 4);
 			gltf.scene.traverse( function( node ) {
 				if ( node.isMesh ) {
 					node.castShadow = true;
