@@ -5,7 +5,7 @@ import * as THREE from './js/three.js';
 import { OrbitControls } from './js/OrbitControls.js';
 import { GLTFLoader } from './js/GLTFLoader.js';
 
-var renderer, scene, camera, controls, meshCube, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer; 
+var renderer, scene, camera, controls, meshCube, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer, coinsGroup; 
 
 var player = {height: 1.8, speed: 0.3, turnSpeed: Math.PI * 0.02};
 var platform = {width: 50, height: 50};
@@ -27,6 +27,7 @@ function main() {
 	camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 30000 );
 	camera.position.set(0, player.height, -5);
 	camera.lookAt(new THREE.Vector3(0,player.height,0));
+	coinsGroup = new THREE.Group();
 
 	scene = new THREE.Scene();
 
@@ -117,6 +118,7 @@ function initCoin(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height =
 	cylinder.rotateX(-80.1);
 	cylinder.castShadow = true;
 	cylinder.receiveShadow = true;
+	coinsGroup.add(cylinder);
 	scene.add( cylinder );
 }
 
@@ -264,6 +266,9 @@ function addCoinsRandomly() {
 
 function animate() {
 	requestAnimationFrame(animate);
+	coinsGroup.children.forEach(child => {
+		child.rotation.x += 0.1;
+	});
 	// MOVEMENT 
 	if (keyboard[87]) { // W key
 		camera.position.x -= Math.sin(camera.rotation.y) * player.speed;
