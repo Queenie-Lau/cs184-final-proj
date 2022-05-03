@@ -74,7 +74,7 @@ function initFloor() {
 
 // Instantiate player obstacles
 function initObjects() {
-	initSpinningCube(2, 8);
+	// initSpinningCube(2, 8);
 	initTree(-3, -6, 2.5, 6);
 	initTree(5, 5, 1, 8);
 	initTree(3, 3);
@@ -83,7 +83,7 @@ function initObjects() {
 	initTree(-6, 9, 1.5, 4, 7);
 	initTree(-7.5, -7.5, 2, 6, 7);
 
-	initCube(6, .5, -4, 3, 5, 1);
+	initCube(6, .5, -4, 3, 5, 1, purple);
 	initCube(4, 5, -10, 5, 10, 1, purple);
 	initCube(-4, 1, 0, 2, 2, 2, purple);
 
@@ -130,7 +130,8 @@ function initCylinderPipes(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1,
 	pipeTexture.repeat.set( 4, 4 );	
 
 	const pipeMaterial = new THREE.MeshPhongMaterial( {map : pipeTexture} );
-	const cylinder = new THREE.Mesh( geometry, pipeMaterial );
+	const pipeColor =  new THREE.MeshPhongMaterial({color: 0x2CB01A, wireframe: WIREFRAME});
+	const cylinder = new THREE.Mesh( geometry, pipeColor );
 	cylinder.position.set(x, y, z);
 	cylinder.castShadow = true;
 	cylinder.receiveShadow = true;
@@ -139,6 +140,18 @@ function initCylinderPipes(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1,
 	cylinderBoundingBox.setFromObject(cylinder);
 
 	scene.add( cylinder );
+	initTorusForPipe(x, y, z)
+}
+
+function initTorusForPipe(x = 0, y = 0, z = 0, radius = 1, tube = .2, radialSegments = 32, tubularSegments = 100) {
+	const geometry = new THREE.TorusGeometry( radius, tube, radialSegments, tubularSegments );
+	const material = new THREE.MeshPhongMaterial( { color: 0x2CB01A } );
+	const torus = new THREE.Mesh( geometry, material );
+	torus.position.set(x, y+2.5, z);
+	torus.castShadow = true;
+	torus.receiveShadow = true;
+	torus.rotateX(89.5);
+	scene.add( torus );
 }
 
 function initSkyBox() {
@@ -166,20 +179,20 @@ function initSkyBox() {
 	scene.add(skybox);
 }
 
-function initSpinningCube(x = 0, z = 0) {
-	const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-	const cubeMaterial = new THREE.MeshPhongMaterial({color: red, wireframe: WIREFRAME});
-	meshCube = new THREE.Mesh( cubeGeometry, cubeMaterial );
-	meshCube.position.set(x, 1, z);
-	meshCube.receiveShadow = true;
-	meshCube.castShadow = true;
-	scene.add( meshCube );
-}
+// function initSpinningCube(x = 0, z = 0) {
+// 	const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+// 	const cubeMaterial = new THREE.MeshPhongMaterial({color: red, wireframe: WIREFRAME});
+// 	meshCube = new THREE.Mesh( cubeGeometry, cubeMaterial );
+// 	meshCube.position.set(x, 1, z);
+// 	meshCube.receiveShadow = true;
+// 	meshCube.castShadow = true;
+// 	scene.add( meshCube );
+// }
 
 function initCube(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color = red) {
 	const geometry = new THREE.BoxGeometry(width, height, depth);
 
-	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/iwaa32.png" );
+	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/brick.png" );
 	pipeTexture.wrapS = THREE.RepeatWrapping;
 	pipeTexture.wrapT = THREE.RepeatWrapping;
 	pipeTexture.repeat.set( 4, 4 );	
