@@ -59,6 +59,7 @@ function addSceneObjects() {
 	initSkyBox();
 	scene.fog = new THREE.Fog(0xDFE9F3, -40, 100);
 	scene.background = new THREE.Color("rgb(135, 206, 235)");
+	scene.add( coinsGroup );
 }
 
 // Instantiate the floor mesh
@@ -131,7 +132,7 @@ function initCoin(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height =
 	cylinder.castShadow = true;
 	cylinder.receiveShadow = true;
 	coinsGroup.add(cylinder);
-	scene.add( cylinder );
+	// scene.add( cylinder );
 }
 
 function initCylinderPipes(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height = 5, radialSegments = 32, heightSegments = 1, openEnded = false) {
@@ -334,7 +335,7 @@ function addDecorRandomly() {
 function animate() {
 	requestAnimationFrame(animate);
 	coinsGroup.children.forEach(child => {
-		child.rotation.x += 0.1;
+		child.rotateZ(-0.1);
 	});
 	// MOVEMENT 
 	if (keyboard[87]) { // W key
