@@ -5,11 +5,12 @@ import * as THREE from './js/three.js';
 import { OrbitControls } from './js/OrbitControls.js';
 import { GLTFLoader } from './js/GLTFLoader.js';
 
-var renderer, scene, camera, meshCube, skybox, skyboxGeo, floorTexture, pipeTexture; 
+var renderer, scene, camera, meshCube, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer; 
 
 var player = {height: 1.8, speed: 0.3, turnSpeed: Math.PI * 0.02};
 var platform = {width: 50, height: 50};
 var keyboard = {};	
+clock = new THREE.Clock();
 
 var WIREFRAME = false;
 
@@ -54,7 +55,7 @@ function addSceneObjects() {
 	texturizeFloor();
 	initFloor();
 	initCylinder();
-	intGoombaEnemies();
+	initGoombaEnemies();
 	initSkyBox();
 	scene.fog = new THREE.Fog(0xDFE9F3, -40, 100);
 	scene.background = new THREE.Color("rgb(135, 206, 235)");
@@ -232,19 +233,21 @@ function animate() {
 	}
 	// TURNING
 	if (keyboard[37]) { // Left arrow key 
-		camera.rotation.y += player.turnSpeed;
-	}
-	if (keyboard[39]) { // Right arrow key 
 		camera.rotation.y -= player.turnSpeed;
 	}
+	if (keyboard[39]) { // Right arrow key 
+		camera.rotation.y += player.turnSpeed;
+	}
 	if (keyboard[38]) { // Up arrow key
-		camera.rotation.x -= player.turnSpeed;
+		camera.rotation.x += player.turnSpeed;
 	}
 	if (keyboard[40]) { // Down arrow key 
-		camera.rotation.x += player.turnSpeed;
+		camera.rotation.x -= player.turnSpeed;
 	}
 
 	renderer.render( scene, camera );
+	var delta = clock.getDelta();
+	if ( mixer ) mixer.update( delta );
 }
 
 function keyDown(event) {
@@ -265,27 +268,30 @@ function keyUp(event) {
 const loader = new GLTFLoader();
 
 // Load a glTF goomba enemey
-function intGoombaEnemies() {
+function initGoombaEnemies() {
 	loader.load(
 		// resource URL
-		'assets/goomba/scene.gltf',
+		'assets/animated_goomba/animated_goomba.gltf',
 		// called when the resource is loaded
 		function ( gltf ) {
-			gltf.scene.scale.set(0.005, 0.005, 0.005); 
-			gltf.scene.position.set(-5, 1, 4);
+			gltf.scene.scale.set(0.02, 0.02, 0.02); 
+			gltf.scene.position.set(0, 0.1, 4);
 			gltf.scene.traverse( function( node ) {
 				if ( node.isMesh ) {
 					node.castShadow = true;
 				}
 			} );
+			
+			mixer = new THREE.AnimationMixer(gltf.scene);
+    		var action = mixer.clipAction( gltf.animations[ 0 ] );
+			action.play();
 			scene.add( gltf.scene );
-	
-			gltf.animations; // Array<THREE.AnimationClip>
+
 			gltf.scene; // THREE.Group
 			gltf.scenes; // Array<THREE.Group>
 			gltf.cameras; // Array<THREE.Camera>
 			gltf.asset; // Object
-	
+
 		},
 		// called while loading is progressing
 		function ( xhr ) {
