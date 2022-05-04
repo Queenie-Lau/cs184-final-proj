@@ -106,7 +106,7 @@ function initObjects() {
 	addCoinsRandomly(); // DO COLLISION CHECKS
 	initSceneDecor(-10, 15);
 	// addDecorRandomly(); // DO COLLISION CHECKS, takes up a lot of mem.
-
+	initTetrahedron(0, 0, 0);
 	initSphere(); // Player will be shooting tennis? balls
 }
 
@@ -117,6 +117,13 @@ function initSphere() {
 	sphere.receiveShadow = true;
 
 	let sphereBoundingBox = new THREE.Sphere(sphere.position, 1);
+}
+
+function initTetrahedron(x = 0, y = 0, z = 0) {
+	const radius = 6;
+	const tetra = new THREE.TetrahedronGeometry(radius, 0);
+	tetra.receiveShadow = true;
+	tetra.castShadow = true;
 }
 
 function initCoin(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height = 5, radialSegments = 32, heightSegments = 1, openEnded = false) {
