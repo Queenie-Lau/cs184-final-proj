@@ -7,15 +7,14 @@ import { Movement} from './js/movement/FirstPersonMovement.js';
 
 var renderer, scene, camera, movement, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer, coinsGroup; 
 
-const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
+//const raycaster = new THREE.Raycaster();
+//const pointer = new THREE.Vector2();
 
 var player = {height: 1.8, speed: 0.3, turnSpeed: Math.PI * 0.02};
+var id = {coin: "coin", tree: "tree", regularBox: "regBox", powerUpBox: "powBox", pipe: "pipe"}; // For raycasting/collision identification
 var platform = {width: 50, height: 50};
-//var velocity = new THREE.Vector3();
 
 clock = new THREE.Clock();
-//var prevTime = performance.now();
 
 var WIREFRAME = false;
 
@@ -30,6 +29,9 @@ function main() {
 	camera.position.set(0, player.height, -5);
 	camera.lookAt(new THREE.Vector3(0,player.height,0));
 	coinsGroup = new THREE.Group();
+	//Set up player bounding box
+
+	
 
 	scene = new THREE.Scene();
 
@@ -142,6 +144,10 @@ function initCoin(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height =
 	cylinder.rotateX(-80.1);
 	cylinder.castShadow = true;
 	cylinder.receiveShadow = true;
+
+	// Bounding box 
+	let coinBB = new THREE.Sphere(cylinder.position, radiusTop);
+	cylinder.name = id.coin; 
 	coinsGroup.add(cylinder);
 	// scene.add( cylinder );
 }
@@ -164,6 +170,7 @@ function initCylinderPipes(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1,
 	let cylinderBoundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
 	cylinderBoundingBox.setFromObject(cylinder);
 
+	cylinder.name = id.pipe;
 	scene.add( cylinder );
 	initTorusForPipe(x, y, z)
 }
@@ -176,6 +183,7 @@ function initTorusForPipe(x = 0, y = 0, z = 0, radius = 1, tube = .2, radialSegm
 	torus.castShadow = true;
 	torus.receiveShadow = true;
 	torus.rotateX(89.5);
+	torus.name = id.pipe;
 	scene.add( torus );
 }
 
@@ -221,6 +229,7 @@ function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1) {
 	let cubeBoundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
 	cubeBoundingBox.setFromObject(cube);
 	
+	cube.name = id.regularBox;
 	scene.add( cube );
 
 	return cube;
@@ -239,6 +248,7 @@ function initPowerUpBox(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1) {
 	cube.receiveShadow = true;
 	cube.castShadow = true;
 	
+	cube.name = id.powerUpBox;
 	scene.add( cube );
 }
 
@@ -254,6 +264,7 @@ function initCapsuleTree(radius = .1, length = .1, x = 0, y = 0, z = 0) {
 	treeLeaves.position.set(x, y, z);
 	treeLeaves.receiveShadow = true;
 	treeLeaves.castShadow = true;
+	treeLeaves.name = id.tree;
 	scene.add(treeLeaves);
 }
 
@@ -285,6 +296,8 @@ function initTree(x = 0, z = 0, width = 1.5, height = 4, scale = 5) {
 	treeLeaves.position.set(x, trunkHeight + height / 2, z);
 	treeLeaves.receiveShadow = true;
 	treeLeaves.castShadow = true;
+	treeLeaves.name = id.tree;
+	treeTrunk.name = id.tree;
 	scene.add(treeLeaves);
 	scene.add(treeTrunk);
 }
@@ -359,17 +372,25 @@ function animate() {
 	velocity.y -= 9.8 * 100.0 * time_step_diff; // 100.0 = mass
 
 	*/
-	raycaster.setFromCamera( pointer, camera );
+	//raycaster.setFromCamera( pointer, camera );
 
 	// calculate objects intersecting the picking ray
-	const intersects = raycaster.intersectObjects( scene.children );
+	/*const intersects = raycaster.intersectObjects( scene.children );
 
 	for ( let i = 0; i < intersects.length; i ++ ) {
 
 		//intersects[ i ].object.material.color.set( 0xff0000 );
-		console.log(intersects[i].object);
+		var type = intersects[i].object.name;
+		switch (type) {
+			case id.coid: console.log("COIN"); break;
+			case id.tree: console.log("TREE"); break;
+			case id.powerUpBox: console.log("POWER UP BOX"); break;
+			case id.regularBox: console.log("BRICKS"); break;
+			case id.pip: console.log("PIPE"); break;
+		}
+		//console.log(intersects[i].object);
 
-	}
+	}*/
 	
 
 	coinsGroup.children.forEach(child => {
