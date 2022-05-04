@@ -7,6 +7,9 @@ import { Movement} from './js/movement/FirstPersonMovement.js';
 
 var renderer, scene, camera, movement, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer, coinsGroup; 
 
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+
 var player = {height: 1.8, speed: 0.3, turnSpeed: Math.PI * 0.02};
 var platform = {width: 50, height: 50};
 //var velocity = new THREE.Vector3();
@@ -349,6 +352,19 @@ function animate() {
 	velocity.y -= 9.8 * 100.0 * time_step_diff; // 100.0 = mass
 
 	*/
+	raycaster.setFromCamera( pointer, camera );
+
+	// calculate objects intersecting the picking ray
+	const intersects = raycaster.intersectObjects( scene.children );
+
+	for ( let i = 0; i < intersects.length; i ++ ) {
+
+		//intersects[ i ].object.material.color.set( 0xff0000 );
+		console.log(intersects[i].object);
+
+	}
+	
+
 	coinsGroup.children.forEach(child => {
 		child.rotateZ(-0.1);
 	});
