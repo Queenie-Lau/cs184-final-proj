@@ -2,18 +2,17 @@
 	Initializes scene and player movement
 */
 import * as THREE from './js/three.js';
-//import { OrbitControls } from './js/OrbitControls.js';
-import { MovementControls } from './js/movement.js';
 import { GLTFLoader } from './js/GLTFLoader.js';
+import { Movement} from './js/movement/FirstPersonMovement.js';
 
-var renderer, scene, camera, controls, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer, coinsGroup; 
+var renderer, scene, camera, movement, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer, coinsGroup; 
 
 var player = {height: 1.8, speed: 0.3, turnSpeed: Math.PI * 0.02};
 var platform = {width: 50, height: 50};
-var velocity = new THREE.Vector3();
-var keyboard = {};	
+//var velocity = new THREE.Vector3();
+
 clock = new THREE.Clock();
-var prevTime = performance.now();
+//var prevTime = performance.now();
 
 var WIREFRAME = false;
 
@@ -47,7 +46,7 @@ function main() {
 	document.body.appendChild( renderer.domElement );
 
 	//controls = new OrbitControls( camera, renderer.domElement );
-	controls = new MovementControls( camera, renderer.domElement ); 
+	movement = new Movement( camera, renderer.domElement ); 
 	animate();
 }
 
@@ -198,16 +197,6 @@ function initSkyBox() {
 	scene.add(skybox);
 }
 
-// function initSpinningCube(x = 0, z = 0) {
-// 	const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-// 	const cubeMaterial = new THREE.MeshPhongMaterial({color: red, wireframe: WIREFRAME});
-// 	meshCube = new THREE.Mesh( cubeGeometry, cubeMaterial );
-// 	meshCube.position.set(x, 1, z);
-// 	meshCube.receiveShadow = true;
-// 	meshCube.castShadow = true;
-// 	scene.add( meshCube );
-// }
-
 function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1) {
 	const geometry = new THREE.BoxGeometry(width, height, depth);
 
@@ -354,76 +343,23 @@ function initPlayerGun() {
 
 function animate() {
 	requestAnimationFrame(animate);
-	controls.update();
+	movement.update();
 
-	const time = performance.now();
+	/*const time = performance.now();
 	const time_step_diff = ( time - prevTime ) / 1000;
 	velocity.x -= velocity.x * 10.0 * time_step_diff;
 	velocity.z -= velocity.z * 10.0 * time_step_diff;
 	velocity.y -= 9.8 * 100.0 * time_step_diff; // 100.0 = mass
 
+	*/
 	coinsGroup.children.forEach(child => {
 		child.rotateZ(-0.1);
 	});
-	/*meshCube.rotation.x += 0.01;
-	// MOVEMENT 
-	if (keyboard[87]) { // W key
-		camera.position.x -= Math.sin(camera.rotation.y) * player.speed;
-		camera.position.z += Math.cos(camera.rotation.y) * player.speed;
-	}
-	if (keyboard[83]) { // S key
-		camera.position.x += Math.sin(camera.rotation.y) * player.speed;
-		camera.position.z -= Math.cos(camera.rotation.y) * player.speed;
-	}
-	if(keyboard[65]){ // A key
-		camera.position.x += Math.sin(camera.rotation.y + Math.PI/2) * player.speed;
-		camera.position.z -= Math.cos(camera.rotation.y + Math.PI/2) * player.speed;
-	}
-	if(keyboard[68]){ // D key
-		camera.position.x += Math.sin(camera.rotation.y - Math.PI/2) * player.speed;
-		camera.position.z -= Math.cos(camera.rotation.y - Math.PI/2) * player.speed;
-	}
-	// TURNING
-	if (keyboard[37]) { // Left arrow key 
-		camera.rotation.y -= player.turnSpeed;
-	}
-	if (keyboard[39]) { // Right arrow key 
-		camera.rotation.y += player.turnSpeed;
-	}
-	if (keyboard[38]) { // Up arrow key
-		camera.rotation.x += player.turnSpeed;
-	}
-	if (keyboard[40]) { // Down arrow key 
-		camera.rotation.x -= player.turnSpeed;
-	}
-	// JUMPING - TODO
-	if (keyboard[32]) { // Space bar key
-		// var velocityY = 0;
-		// var maxVelelocityY = 6;
-		// var inertia = 0.92;
-		// var gravity = .3;
-
-		// velocityY = -maxVelelocityY; // init velocity
-		// velocityY+= gravity;
-		// velocityY*= inertia; 
-		// camera.rotation.y += velocityY;
-		velocity.y += 350;
-	}
-	*/
 
 	renderer.render( scene, camera );
 	var delta = clock.getDelta();
 	if ( mixer ) mixer.update( delta );
 }
-
-
-//function keyDown(event) {
-//j	keyboard[event.keyCode] = true;
-//}
-
-//function keyUp(event) {
-//	keyboard[event.keyCode] = false;
-//}
 
 // Instantiate a loader
 const loader = new GLTFLoader();
@@ -502,6 +438,4 @@ function initSceneDecor(x = 0, z = 0) {
 	// });
 }
 
-//window.addEventListener('keydown', keyDown);
-//window.addEventListener('keyup', keyUp);
 window.onload = main;
