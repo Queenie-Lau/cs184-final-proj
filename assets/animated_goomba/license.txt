@@ -1,0 +1,11 @@
+Model Information:
+* title:	Animated Goomba (Super Mario Bros)
+* source:	https://sketchfab.com/3d-models/animated-goomba-super-mario-bros-3c91cc4ac8144d82a05309679a3dbbd5
+* author:	Anthony Yanez (https://sketchfab.com/paulyanez)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Animated Goomba (Super Mario Bros)" (https://sketchfab.com/3d-models/animated-goomba-super-mario-bros-3c91cc4ac8144d82a05309679a3dbbd5) by Anthony Yanez (https://sketchfab.com/paulyanez) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

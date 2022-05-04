@@ -27,7 +27,7 @@ class MovementControls extends EventDispatcher {
 		this.movementSpeed = 1.0;
 		this.rollSpeed = 0.005;
 
-		this.dragToLook = true;
+		this.dragToLook = false;
 		this.autoForward = false;
 
 		// disable default target object behavior
