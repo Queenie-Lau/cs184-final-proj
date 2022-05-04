@@ -4,6 +4,7 @@
 import * as THREE from './js/three.js';
 import { GLTFLoader } from './js/GLTFLoader.js';
 import { Movement} from './js/movement/FirstPersonMovement.js';
+import Ammo from './js/ammo.js';
 
 var renderer, scene, camera, movement, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer, coinsGroup; 
 
@@ -42,10 +43,54 @@ function main() {
 	renderer.shadowMap.type = THREE.BasicShadowMap;
 	document.body.appendChild( renderer.domElement );
 
+	renderer.outputEncoding = THREE.sRGBEncoding;
+
 	//controls = new OrbitControls( camera, renderer.domElement );
 	movement = new Movement( camera, renderer.domElement ); 
 	animate();
 }
+
+//Declaring projectile-related variables
+let physicsWorld;
+let tmpTransformation = undefined;
+let raycaster = new THREE.Raycaster();
+let tmpPos = new THREE.Vector3();
+let mouseCoords = new THREE.Vector2();
+
+Ammo().then(start)
+function startBulletTime(){
+	initPhysicsWorld();
+	initGraphicsWorld();
+
+	createGround();
+	createGridCubes();
+	createDropCube();
+
+	addEventHandlers();
+
+	render();
+}
+
+function initPhysicsWorld() {
+	let collisionConfiguration = new Ammo.btDefaultCollisonConfiguration(),
+
+		dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration),
+
+		overlappingPairCache = new Ammo.btDbvtBroadphase(),
+
+		solver = new Ammo.btSequentialImpulseConstraintSolver();
+
+	physicsWorld = new Ammo.btDiscreteDynamicWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
+	physicsWorld.setGravity(new Ammo.btVector3(0, -10, 0));
+}
+
+function initGraphicsWorld(){
+	clock = new THREE.Clock();
+
+	
+
+}
+
 
 // Instantiates all scene primitives
 function addSceneObjects() {
@@ -80,6 +125,8 @@ function initFloor() {
 	scene.add(meshFloor);
 }
 
+var bullets = [];
+
 // Instantiate player obstacles
 function initObjects() {
 	initTree(-3, -6, 2.5, 6);
@@ -109,6 +156,7 @@ function initObjects() {
 	initTetrahedron(0, 0, 0);
 	initSphere(); // Player will be shooting tennis? balls
 }
+
 
 function initSphere() {
 	const sphere = new THREE.Mesh(new THREE.SphereGeometry(1), new THREE.MeshPhongMaterial( { color: 0xff5191 }));
