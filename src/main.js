@@ -17,11 +17,8 @@ clock = new THREE.Clock();
 var WIREFRAME = false;
 
 var white = 0xffffff;
-var red = 0xff4444;
 var blue = 0x039dfc;
 var brown = 0x964B00;
-var green = 0x42692f;
-var purple = 0x6a0dad;
 
 // initialize scene
 function main() {
