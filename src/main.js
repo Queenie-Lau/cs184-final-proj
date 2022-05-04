@@ -2,9 +2,10 @@
 	Initializes scene and player movement
 */
 import * as THREE from './js/three.js';
-import { OrbitControls } from './js/OrbitControls.js';
+//import { OrbitControls } from './js/OrbitControls.js';
+import { MovementControls } from './js/movement.js';
 
-var renderer, scene, camera, meshCube; 
+var renderer, scene, camera, meshCube, controls; 
 
 var player = {height: 1.8, speed: 0.2, turnSpeed: Math.PI * 0.02};
 var platform = {width: 20, height: 30};
@@ -40,7 +41,8 @@ function main() {
 	renderer.shadowMap.type = THREE.BasicShadowMap;
 	document.body.appendChild( renderer.domElement );
 
-	var controls = new OrbitControls( camera, renderer.domElement );
+	//controls = new OrbitControls( camera, renderer.domElement );
+	controls = new MovementControls( camera, renderer.domElement ); 
 	animate();
 }
 
@@ -153,7 +155,8 @@ function initSmokeColors() {
 
 function animate() {
 	requestAnimationFrame(animate);
-	meshCube.rotation.x += 0.01;
+	controls.update();
+	/*meshCube.rotation.x += 0.01;
 	meshCube.rotation.y += 0.02;
 
 	// MOVEMENT 
@@ -186,20 +189,21 @@ function animate() {
 	if (keyboard[40]) { // Down arrow key 
 		camera.rotation.x += player.turnSpeed;
 	}
+	*/
 
 	renderer.render( scene, camera );
 }
 
 
-function keyDown(event) {
-	keyboard[event.keyCode] = true;
-}
+//function keyDown(event) {
+//j	keyboard[event.keyCode] = true;
+//}
 
-function keyUp(event) {
-	keyboard[event.keyCode] = false;
-}
+//function keyUp(event) {
+//	keyboard[event.keyCode] = false;
+//}
 
 
-window.addEventListener('keydown', keyDown);
-window.addEventListener('keyup', keyUp);
+//window.addEventListener('keydown', keyDown);
+//window.addEventListener('keyup', keyUp);
 window.onload = main;
