@@ -174,12 +174,12 @@ function initTorusForPipe(x = 0, y = 0, z = 0, radius = 1, tube = .2, radialSegm
 
 function initSkyBox() {
 	const materialTextures = [];
-	const front = new THREE.TextureLoader().load("assets/mario_assets/water_mod.png");
-	const back = new THREE.TextureLoader().load("assets/mario_assets/water.png");
-	const up = new THREE.TextureLoader().load("assets/mario_assets/water_top.png");
+	const front = new THREE.TextureLoader().load("assets/mario_assets/water.png");
+	const back = new THREE.TextureLoader().load("assets/mario_assets/sky_no_sun.png");
+	const up = new THREE.TextureLoader().load("assets/mario_assets/sky_top.png");
 	const down = new THREE.TextureLoader().load("assets/mario_assets/water_bottom.png");
-	const right = new THREE.TextureLoader().load("assets/mario_assets/water_mod.png");
-	const left = new THREE.TextureLoader().load("assets/mario_assets/water_mod.png");
+	const right = new THREE.TextureLoader().load("assets/mario_assets/sky_no_sun.png");
+	const left = new THREE.TextureLoader().load("assets/mario_assets/sky_no_sun.png");
 
 	materialTextures.push(new THREE.MeshBasicMaterial({ map: front }));
 	materialTextures.push(new THREE.MeshBasicMaterial({ map: back }));
