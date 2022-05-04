@@ -40,7 +40,22 @@ class Movement extends EventDispatcher {
 
 
         controls = new PointerLockControls( object, document.body );
-        controls.isLocked = true;
+        const blocker = document.getElementById( 'blocker' );
+        const instructions = document.getElementById( 'instructions' );
+
+        instructions.addEventListener( 'click', function () {
+            controls.lock();
+        } );
+
+        controls.addEventListener( 'lock', function () {
+            instructions.style.display = 'none';
+            blocker.style.display = 'none';
+        } );
+
+        controls.addEventListener( 'unlock', function () {
+            blocker.style.display = 'block';
+            instructions.style.display = '';
+        } );    
 
         // Input Functions
         function onKeyDown( event ) {
@@ -146,15 +161,12 @@ class Movement extends EventDispatcher {
                 controls.moveRight( - velocity.x * delta );
                 controls.moveForward( - velocity.z * delta );
 
-                controls.getObject().position.y += ( velocity.y * delta ); // Jump 
-
+                // Jump 
+                controls.getObject().position.y += ( velocity.y * delta ); 
                 if ( controls.getObject().position.y < cameraHeight) {
-
                     velocity.y = 0;
                     controls.getObject().position.y = cameraHeight;
-
                     canJump = true;
-
                 }
 
             }
