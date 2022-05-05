@@ -145,15 +145,18 @@ function initObjects() {
 	initSceneDecor(-10, 15);
 	// addDecorRandomly(); // DO COLLISION CHECKS, takes up a lot of mem.
 	initTetrahedron(0, 0, 0);
-	initSphere(); // Player will be shooting tennis? balls
+	initSphere(); // Player will be shooting white balls
 }
 
 function initSphere() {
-	const sphere = new THREE.Mesh(new THREE.SphereGeometry(1), new THREE.MeshPhongMaterial( { color: 0xff5191 }));
-	sphere.position.set(-10, 10, 0);
+	const geometry = new THREE.SphereGeometry( .2, 64, 16 );
+	const material = new THREE.MeshPhongMaterial( { color: white } );
+	const sphere = new THREE.Mesh( geometry, material );
+
+	sphere.position.set(0, 3, 0);
 	sphere.castShadow = true;
 	sphere.receiveShadow = true;
-
+	scene.add( sphere );
 	let sphereBoundingBox = new THREE.Sphere(sphere.position, 1);
 }
 
@@ -374,11 +377,13 @@ function initPlayerGun() {
 		// resource URL
 		'assets/toy_gun/scene.gltf',
 		function ( gltf ) {
-			gltf.scene.scale.set(.5, .5, .5); 
-			// gltf.scene.position.set(-20, -10, -13);
-			camera.position.normalize();
+			gltf.scene.scale.set(.5, .5, .5);
+			gltf.scene.position.set(camera.position.x - 20, camera.position.y - 10, camera.position.z - 13);
+			
+			// camera.position.normalize();
 			// gltf.scene.position.set(normalizedPos.x, normalizedPos.y, normalizedPos.z);
 			// gltf.scene.position.set( (camera.position.x - Math.sin(camera.rotation.y + Math.PI/6)) * 0.75, camera.position.y - 0.5 + Math.sin(20) * 0.01, camera.position.z + Math.cos(camera.rotation.y + Math.PI/6) * 0.75);
+
 			gltf.scene.traverse( function( node ) {
 				if ( node.isMesh ) {
 					node.castShadow = true;
