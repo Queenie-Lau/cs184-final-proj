@@ -20,13 +20,13 @@ class SceneManager {
 
         /* Initialization and physics functions */
 
-
         function createCube(scale, position, mass, material, quat) {
             var geometry = new THREE.BoxBufferGeometry(scale.x, scale.y, scale.z);
             //var material = new THREE.MeshPhongMaterial({color: color});
             var newCube = new THREE.Mesh( geometry, material );
             newCube.position.set(position.x, position.y, position.z);
-            
+
+            newCube.userData.tag = "cube"; // not setting correctly..?
             scene.add(newCube);
 
             let transform = new Ammo.btTransform();
@@ -52,7 +52,9 @@ class SceneManager {
             let rBody = new Ammo.btRigidBody( rbInfo );
             physicsWorld.addRigidBody( rBody );
             newCube.userData.physicsBody = rBody;
+            newCube.name = "cube";
            
+            // set cube ID here? -> add to dict. mapping
             return newCube;
         }
 
@@ -82,7 +84,8 @@ class SceneManager {
             physicsWorld.addRigidBody( rBody );
 
             mesh.userData.physicsBody = rBody;
-            mesh.userData.tag = "cube";
+            mesh.userData.tag = "cube"; // not setting correctly..?
+            mesh.name = "cube";
             return mesh;
         }
 

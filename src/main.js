@@ -127,7 +127,6 @@ function updatephysicsWorld(deltaTime) {
 	for( let i = 0; i < rigidBody_List.length; i++) {
 		let Graphics_Obj = rigidBody_List[i];
 		let Physics_Obj = Graphics_Obj.userData.physicsBody;
-
 		let motionState = Physics_Obj.getMotionState();
 
 		if(motionState) {
@@ -135,7 +134,6 @@ function updatephysicsWorld(deltaTime) {
 			let new_pos = tmpTransformation.getOrigin();
 			let new_qua = tmpTransformation.getRotation();
 			//console.log(new_pos.x(), new_pos.y(), new_pos.z());
-
 			Graphics_Obj.position.set(new_pos.x(), new_pos.y(), new_pos.z());
 
 			//Graphics_Obj.quaternion.set(new_qua.x, new_qua.y, new_qua.z, new_qua.w);
@@ -279,6 +277,7 @@ function initCoin(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height =
 	// Bounding box 
 	let coinBB = new THREE.Sphere(cylinder.position, radiusTop);
 	//cylinder.name = id.coin; 
+	cylinder.name = "coin";
 	coinsGroup.add(cylinder);
 	// scene.add( cylinder );
 }
@@ -360,6 +359,7 @@ function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color
 	var mass = 0;
 
 	var cube_to_add = sceneManager.initCube(position, scale, mass, wallMaterial);
+	cube.userData.tag = "cube"; // not setting correctly..?
 	rigidBody_List.push( cube_to_add );
 
 	/*
@@ -535,7 +535,7 @@ function checkForCollisions() {
 			let rb1 = Ammo.castObject( contactManifold.getBody1(), Ammo.btRigidBody );
 
 			// Get ball + colliding cube
-			let cubeObject = rb0.threeObject;
+			let cubeObject = rb0.threeObject; // not being recognized
 			let ballObject = rb1.threeObject;
 
 			if ( ! cubeObject && ! ballObject ) continue;
@@ -553,6 +553,7 @@ function checkForCollisions() {
 			let worldPos1 = contactPoint.get_m_positionWorldOnB();
 			let localPos0 = contactPoint.get_m_localPointA();
 			let localPos1 = contactPoint.get_m_localPointB();
+
 
 			console.log({
 				manifoldIndex: i, 
@@ -572,6 +573,10 @@ function checkForCollisions() {
 				}
 			   });
 			// console.log(isBallTouchingAnotherObject(ballObject)) breaks.
+
+			// Manually check distances for now and get object closest to target
+			// 
+
 		}
 	}
 }
@@ -784,6 +789,14 @@ function onMouseDown(event) {
 		physicsWorld.removeRigidBody(ball.userData.physicsBody);
 		scene.remove(ball);
 	}, 500);
+
+	/** TESTING */
+	var intersects = raycaster.intersectObjects( scene.children );
+
+    if ( intersects.length > 0 ) {
+		console.log("HIT AN OBJECT!");
+		console.log(intersects[ 0 ].object);
+	}
 }
 
 function addEventHandlers() {
