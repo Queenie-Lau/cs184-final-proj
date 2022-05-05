@@ -238,6 +238,11 @@ function initObjects() {
 	initCoin(1.6, 4, 10, .3, .3, .1, 32, 1, false);
 	initCoin(1, 4, 10, .3, .3, .1, 32, 1, false);
 	initCoin(.4, 4, 10, .3, .3, .1, 32, 1, false);
+	initCoin(.7, -4, 10, .3, .3, .1, 32, 1, false);
+
+	initCoin(1.6, 4, -3, .3, .3, .1, 32, 1, false);
+	initCoin(1, 4, -3, .3, .3, .1, 32, 1, false);
+	initCoin(.4, 4, -3, .3, .3, .1, 32, 1, false);
 
 	initCylinderPipes(-8, 0, 5);
 	initCylinderPipes(1, 1, 10, 1, 1, 3, 32, 1, false);
@@ -442,16 +447,18 @@ function initTree(x = 0, z = 0, width = 1.5, height = 4, scale = 5) {
 
 // Instantiate scene lights
 function initLights() {
-	const ambientLight = new THREE.AmbientLight(white, 0.5);
-	const pointLight = new THREE.PointLight(white, 0.8, 18);
+	//const ambientLight = new THREE.AmbientLight(white, 0.01);
+	var pointLight = new THREE.PointLight(white, 0.1, 50);
+	var directionalLight = new THREE.DirectionalLight(white, 0.7);
 	
-	pointLight.position.set(-3, 6, -3);
+	pointLight.position.set(-10, 10, -3);
 	pointLight.castShadow = true;
 	pointLight.shadow.camera.near = 0.1;
-	pointLight.shadow.camera.far = 25;
+	pointLight.shadow.camera.far = 20;
 
 	scene.add(pointLight);
-	scene.add(ambientLight);
+	scene.add(directionalLight);
+	//scene.add(ambientLight);
 }
 
 // Instantiate boundaries
