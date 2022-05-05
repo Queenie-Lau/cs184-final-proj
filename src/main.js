@@ -3,10 +3,14 @@
 */
 import * as THREE from './js/three.js';
 import { GLTFLoader } from './js/GLTFLoader.js';
-import { Movement} from './js/movement/FirstPersonMovement.js';
+import { Movement } from './js/movement/FirstPersonMovement.js';
+//import { Ammo } from './js/ammo.js';
+//import * as AMMO from './js/ammo.js';
+
 
 var renderer, scene, camera, movement, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer, coinsGroup; 
 
+var coinsGroup = new THREE.Group();
 //const raycaster = new THREE.Raycaster();
 //const pointer = new THREE.Vector2();
 
@@ -24,39 +28,161 @@ var brown = 0x964B00;
 
 // initialize scene
 function main() {
+	
+
+	//controls = new OrbitControls( camera, renderer.domElement );
+	//movement = new Movement( camera, renderer.domElement ); 
+	initMusic()
+	animate();
+}
+
+//Declaring projectile-related variables
+let physicsWorld;
+let tmpTransformation = undefined;
+let raycaster = new THREE.Raycaster();
+let tmpPos = new THREE.Vector3();
+let mouseCoords = new THREE.Vector2();
+let rigidBody_List = new Array();
+
+Ammo().then(start)
+function start(){
+	initPhysicsWorld();
+	initGraphicsWorld();
+
+	createGround();
+	createGridCubes();
+	createDropCube();
+
+	addEventHandlers();
+
+	render();
+}
+
+
+function initPhysicsWorld() {
+	let collisionConfiguration = new Ammo.btDefaultCollisonConfiguration(),
+
+		dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration),
+
+		overlappingPairCache = new Ammo.btDbvtBroadphase(),
+
+		solver = new Ammo.btSequentialImpulseConstraintSolver();
+
+	physicsWorld = new Ammo.btDiscreteDynamicWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
+	physicsWorld.setGravity(new Ammo.btVector3(0, -10, 0));
+}
+
+
+
+// Init Scene, Camera, Lighting, Renderer
+function initGraphicsWorld() {
 	//Create and position the camera
 	camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 30000 );
 	camera.position.set(0, player.height, -5);
 	camera.lookAt(new THREE.Vector3(0,player.height,0));
-	coinsGroup = new THREE.Group();
-	//Set up player bounding box
-
-	
 
 	scene = new THREE.Scene();
+
+	initLights();
 
 	// Instantiate the renderer
 	renderer = new THREE.WebGLRenderer( { antialias: true } );
 	renderer.setSize( window.innerWidth, window.innerHeight );
-
-	// Add scene objects
-	addSceneObjects();
 
 	// Add Shadow Map 
 	renderer.shadowMap.enabled = true;
 	renderer.shadowMap.type = THREE.BasicShadowMap;
 	document.body.appendChild( renderer.domElement );
 
-	movement = new Movement( camera, renderer.domElement ); 
-	initMusic()
-	animate();
+	renderer.outputEncoding = THREE.sRGBEncoding;
+
 }
+
+function onMouseDown(event) {
+	mouseCoords.set((event.clientX / window.innerWidth) * 2 - 1, - (event.clientY / window.innerHeight) * 2 + 1);
+	raycaster.setFromCamera(mouseCoords, camera);
+
+	tmpPos.copy(raycaster.ray.direction);
+	tmpPos.add(raycaster.ray.origin);
+
+	let pos = {x:tmpPos.x, y:tmpPos.y, z:tmpPos.z};
+	let radius = 1;
+	let quat = {x:0, y:0, z:0, w:1};
+	let mass = 1;
+
+	let ball = new THREE.Mesh(
+		new THREE.SphereBufferGeometry(radius),
+		new THREE.MeshToonMaterial({emissive: white, emissiveIntensity:0.8})
+	);
+	ball.position.set(pos.x, pos.y, pos.z);
+	scene.add(ball);
+	
+	let transform = new Ammo.btTransform();
+	transform.setIdentity();
+
+	transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
+	transform.setRotation(new Ammo.btQuaternion( 0, 0, 0, 1));
+	let defaultMotionState = new Ammo.btDefaultMotionState(transform);
+
+	let structColShape = new Ammo.btBoxShape( new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
+	structColShape.setMargin(0.05);
+
+	let localIntertia = new Ammo.btVector3(0,0,0);
+	structColShape.calculateLocalInertia(mass, localIntertia);
+
+	let rbInfo = new Ammo.btRigidBodyConstructionInfo(
+		mass,
+		defaultMotionState,
+		structColShape,
+		localIntertia
+	);
+	let rBody = new Ammo.btRigidBody(rbInfo);
+	physicsWorld.addRigidBody( rBody);
+
+	tmpPos.copy(raycaster.ray.direction);
+	tmpPos.multiplyScalar(100);
+
+	body.setLinearVelocity(new Ammo.btVector3(tmpPos.x, tmpPos.y, tmpPos.z));
+
+	ball.userData.physicsBody = body;
+	rigidBody_List.push(ball);
+	
+
+}
+
+function render() {
+	let deltaTime = clock.getDelta();
+	updatephysicsWorld(deltaTime);
+	renderer.render(scene, camera);
+	requestAnimationFrame(render);
+}
+
+function updatephysicsWorld(deltaTime) {
+	physicsWorld.stepSimulation(deltaTime, 10);
+
+	for( let i = 0; i < rigidBody_List.length; i++) {
+		let Graphics_Obj = rigidBody_List[i];
+		let Physics_Obj = Graphics_Obj.userData.physicsBody;
+
+		let motionState = Physics_Obj.getMotionState();
+		if(motionState) {
+			motionState.getWorldTransform(tmpTransformation);
+			let new_pos = tmpTransformation.getOrigin();
+			let new_qua = tmpTransformation.getRotation();
+
+			Graphics_Obj.position.set(new_pos.x(), new_pos.y(), new_pos.z());
+			Graphics_Obj.quaternion.set(0, 0, 0, 1);
+		}
+	}
+}
+
+
+
 
 // Instantiates all scene primitives
 function addSceneObjects() {
 	initBoundaries();
 	initObjects();
-	initLights();
 	texturizeFloor();
 	initFloor();
 	initIsland();
@@ -119,6 +245,7 @@ function initIsland() {
 
 	scene.add( cube );
 }
+var bullets = [];
 
 // Instantiate player obstacles
 function initObjects() {
@@ -168,6 +295,7 @@ function initObjects() {
 	initSphere(); // Player will be shooting white balls
 }
 
+
 function initSphere() {
 	const geometry = new THREE.SphereGeometry( .2, 64, 16 );
 	const material = new THREE.MeshPhongMaterial( { color: white } );
@@ -178,6 +306,32 @@ function initSphere() {
 	sphere.receiveShadow = true;
 	scene.add( sphere );
 	let sphereBoundingBox = new THREE.Sphere(sphere.position, 1);
+
+	//AMMO related code
+	let transform = new Ammo.btTransform();
+	transform.setIdentity();
+
+	transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
+	transform.setRotation(new Ammo.btQuaternion( 0, 0, 0, 1));
+	let defaultMotionState = new Ammo.btDefaultMotionState(transform);
+
+	let structColShape = new Ammo.btBoxShape( new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
+	structColShape.setMargin(0.05);
+
+	let localIntertia = new Ammo.btVector3(0,0,0);
+	structColShape.calculateLocalInertia(mass, localIntertia);
+
+	let rbInfo = new Ammo.btRigidBodyConstructionInfo(
+		mass,
+		defaultMotionState,
+		structColShape,
+		localIntertia
+	);
+	let rBody = new Ammo.btRigidBody(rbInfo);
+	physicsWorld.addRigidBody( rBody);
+
+	newCube.userData.physicsBody = rBody;
+	rigidBody_List.push(newCube);
 }
 
 function initTetrahedron(x = 0, y = 0, z = 0) {
@@ -203,7 +357,7 @@ function initCoin(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height =
 
 	// Bounding box 
 	let coinBB = new THREE.Sphere(cylinder.position, radiusTop);
-	cylinder.name = id.coin; 
+	//cylinder.name = id.coin; 
 	coinsGroup.add(cylinder);
 	// scene.add( cylinder );
 }
@@ -226,7 +380,7 @@ function initCylinderPipes(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1,
 	let cylinderBoundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
 	cylinderBoundingBox.setFromObject(cylinder);
 
-	cylinder.name = id.pipe;
+	//cylinder.name = id.pipe;
 	scene.add( cylinder );
 	initTorusForPipe(x, y, z)
 }
@@ -239,7 +393,7 @@ function initTorusForPipe(x = 0, y = 0, z = 0, radius = 1, tube = .2, radialSegm
 	torus.castShadow = true;
 	torus.receiveShadow = true;
 	torus.rotateX(89.5);
-	torus.name = id.pipe;
+	//torus.name = id.pipe;
 	scene.add( torus );
 }
 
@@ -288,7 +442,7 @@ function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color
 	let cubeBoundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
 	cubeBoundingBox.setFromObject(cube);
 	
-	cube.name = id.regularBox;
+	//cube.name = id.regularBox;
 	scene.add( cube );
 
 	return cube;
@@ -307,7 +461,7 @@ function initPowerUpBox(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1) {
 	cube.receiveShadow = true;
 	cube.castShadow = true;
 	
-	cube.name = id.powerUpBox;
+	//cube.name = id.powerUpBox;
 	scene.add( cube );
 }
 
@@ -323,7 +477,7 @@ function initCapsuleTree(radius = .1, length = .1, x = 0, y = 0, z = 0) {
 	treeLeaves.position.set(x, y, z);
 	treeLeaves.receiveShadow = true;
 	treeLeaves.castShadow = true;
-	treeLeaves.name = id.tree;
+	//treeLeaves.name = id.tree;
 	scene.add(treeLeaves);
 }
 
@@ -355,8 +509,8 @@ function initTree(x = 0, z = 0, width = 1.5, height = 4, scale = 5) {
 	treeLeaves.position.set(x, trunkHeight + height / 2, z);
 	treeLeaves.receiveShadow = true;
 	treeLeaves.castShadow = true;
-	treeLeaves.name = id.tree;
-	treeTrunk.name = id.tree;
+	//treeLeaves.name = id.tree;
+	//treeTrunk.name = id.tree;
 	scene.add(treeLeaves);
 	scene.add(treeTrunk);
 }
