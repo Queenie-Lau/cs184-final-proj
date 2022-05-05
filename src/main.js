@@ -663,7 +663,6 @@ function updateCounter(currCoins, currGoomba, type) {
 
 function removeIntersectedCoinAnimation() {
 	coinsGroup.remove(intersectedObject);
-	scene.remove(intersectedObject); // obj won't remove.
 }
 
 function animate() {
