@@ -8,7 +8,9 @@ import { SceneManager } from './js/SceneManager.js'
 
 var renderer, scene, camera, movement, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer, coinsGroup; 
 var sceneManager;
+var shotBallInsideScene;
 var coinsGroup = new THREE.Group();
+var coinCount;
 //const raycaster = new THREE.Raycaster();
 //const pointer = new THREE.Vector2();
 
@@ -70,8 +72,12 @@ function initPhysicsWorld() {
 
 	physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
 	physicsWorld.setGravity(new Ammo.btVector3(0, -10, 0));
+	physicsWorld.contactP
 }
 
+// function checkForCollisions() {
+
+// }
 
 
 // Init Scene, Camera, Lighting, Renderer
@@ -96,16 +102,17 @@ function initGraphicsWorld() {
 	document.body.appendChild( renderer.domElement );
 
 	renderer.outputEncoding = THREE.sRGBEncoding;
-
 }
-
-
 
 function render() {
 	let deltaTime = clock.getDelta();
 	updatephysicsWorld(deltaTime);
 	renderer.render(scene, camera);
 	movement.update();
+
+	if (shotBallInsideScene) {
+		coinCount += 1;
+	}
 
 	coinsGroup.children.forEach(child => {
 		child.rotateZ(-0.1);
@@ -124,6 +131,7 @@ function updatephysicsWorld(deltaTime) {
 		let Physics_Obj = Graphics_Obj.userData.physicsBody;
 
 		let motionState = Physics_Obj.getMotionState();
+
 		if(motionState) {
 			motionState.getWorldTransform(tmpTransformation);
 			let new_pos = tmpTransformation.getOrigin();
@@ -131,12 +139,11 @@ function updatephysicsWorld(deltaTime) {
 			//console.log(new_pos.x(), new_pos.y(), new_pos.z());
 
 			Graphics_Obj.position.set(new_pos.x(), new_pos.y(), new_pos.z());
+
 			//Graphics_Obj.quaternion.set(new_qua.x, new_qua.y, new_qua.z, new_qua.w);
 		}
 	}
 }
-
-
 
 
 // Instantiates all scene primitives
@@ -248,8 +255,6 @@ function initObjects() {
 	initTetrahedron(0, 0, 0);
 	// initSphere(); // Player will be shooting white balls
 }
-
-
 
 function initTetrahedron(x = 0, y = 0, z = 0) {
 	const radius = 6;
@@ -381,13 +386,11 @@ function initPowerUpBox(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1) {
 	pipeTexture.wrapT = THREE.RepeatWrapping;
 
 	const wallMaterial = new THREE.MeshPhongMaterial({map : pipeTexture})
-	const cube = new THREE.Mesh( geometry, wallMaterial );
-	cube.position.set(x, y, z);
-	cube.receiveShadow = true;
-	cube.castShadow = true;
-	
-	//cube.name = id.powerUpBox;
-	scene.add( cube );
+
+	var position = new THREE.Vector3(x, y, z);
+	var scale = new THREE.Vector3(width, height, depth);
+	var mass = 0;
+	rigidBody_List.push( sceneManager.initCube(position, scale, mass, wallMaterial) );
 }
 
 function initCapsuleTree(radius = .1, length = .1, x = 0, y = 0, z = 0) {
@@ -462,8 +465,10 @@ function initBoundaries(color = white) {
 	initBricks(-platform.width / 2, 0, 0, 1, 1.5, platform.height, color);
 }
 
-function checkCollisions(cube) {
-	// TO DO
+function checkCollisions() {
+	var cbCheckCollision = new Ammo.ConcreteContactResultCallback();
+	cbCheckCollision.hasContact = false;
+	cbCheckCollision.addSingleResult;
 }
 
 function addCoinsRandomly() {
@@ -609,6 +614,7 @@ function initFlower(x = 0, z = 0) {
 /*  SHOOTING CONTROLS */
 
 function onMouseDown(event) {
+	if ( shotBallInsideScene ) return;
 	mouseCoords.set((event.clientX / window.innerWidth) * 2 - 1, - (event.clientY / window.innerHeight) * 2 + 1);
 	raycaster.setFromCamera(mouseCoords, camera);
 
@@ -618,12 +624,12 @@ function onMouseDown(event) {
 	let pos = {x:tmpPos.x, y:tmpPos.y, z:tmpPos.z};
 	let radius = 0.25;
 	let quat = {x:0, y:0, z:0, w:1};
-	let mass = 0.5;
+	let mass = 1;
 
-	let ball = new THREE.Mesh(
-		new THREE.SphereBufferGeometry(radius),
-		new THREE.MeshToonMaterial({emissive: 0x000000, emissiveIntensity:0.8})
-	);
+	var geometry = new THREE.SphereGeometry( .2, 64, 16 );
+	var material = new THREE.MeshPhongMaterial( { color: white } );
+	var ball = new THREE.Mesh( geometry, material );
+
 	ball.position.set(pos.x, pos.y, pos.z);
 	scene.add(ball);
 	
@@ -633,18 +639,19 @@ function onMouseDown(event) {
 	transform.setRotation(new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w));
 	let motionState = new Ammo.btDefaultMotionState(transform);
 
-	let colShape = new Ammo.btSphereShape( radius );
-	colShape.setMargin(0.05);
+	let collisionShape = new Ammo.btSphereShape( radius );
+	collisionShape.setMargin(0.05);
 
 	let localInertia = new Ammo.btVector3(0,0,0);
-	colShape.calculateLocalInertia(mass, localInertia);
+	collisionShape.calculateLocalInertia(mass, localInertia);
 
 	let rbInfo = new Ammo.btRigidBodyConstructionInfo(
 		mass,
 		motionState,
-		colShape,
+		collisionShape,
 		localInertia
 	);
+
 	let rBody = new Ammo.btRigidBody(rbInfo);
 	physicsWorld.addRigidBody( rBody);
 
@@ -652,9 +659,18 @@ function onMouseDown(event) {
 	tmpPos.multiplyScalar(30);
 
 	rBody.setLinearVelocity(new Ammo.btVector3(tmpPos.x, tmpPos.y, tmpPos.z));
+	
+	rBody.threeObject = ball;
 
 	ball.userData.physicsBody = rBody;
 	rigidBody_List.push(ball);
+	shotBallInsideScene = true;
+
+	setTimeout(function(){
+		shotBallInsideScene = false;
+		physicsWorld.removeRigidBody(ball.userData.physicsBody);
+		scene.remove(ball);
+	}, 500);
 }
 
 
