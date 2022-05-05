@@ -1,9 +1,11 @@
 import {
 	EventDispatcher,
+	MaxEquation,
 	Vector3
 } from '../three.js';
 
 import { PointerLockControls } from './PointerLockControls.js';
+import { initSphere } from "/src/main.js";
 
 var controls; 
 
@@ -12,6 +14,7 @@ let moveBackward = false;
 let moveLeft = false;
 let moveRight = false;
 let canJump = false;
+let isShooting = false;
 
 let prevTime = performance.now();
 const velocity = new Vector3();
@@ -87,6 +90,10 @@ class Movement extends EventDispatcher {
                     canJump = false;
                     break;
 
+                case 'KeyF':
+                    isShooting = true;
+                    initSphere();
+                    break;
             }
 
         };
@@ -115,6 +122,9 @@ class Movement extends EventDispatcher {
                     moveRight = false;
                     break;
 
+                case 'Shoot':
+                    isShooting = false;
+                    break;
             }
 
         };
@@ -136,6 +146,9 @@ class Movement extends EventDispatcher {
 
                 //const onObject = intersections.length > 0;
 
+                if (isShooting) {
+                    initSphere();
+                }
 
                 const delta = ( time - prevTime ) / 1000;
 

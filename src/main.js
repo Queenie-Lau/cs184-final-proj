@@ -21,6 +21,7 @@ var platform = {width: 30, height: 30};
 clock = new THREE.Clock();
 
 var WIREFRAME = false;
+var spheresShot = [];
 
 var white = 0xffffff;
 var blue = 0x039dfc;
@@ -82,6 +83,7 @@ function initGraphicsWorld() {
 	camera.lookAt(new THREE.Vector3(0,player.height,0));
 
 	scene = new THREE.Scene();
+	const raycaster = new THREE.Raycaster();
 
 	initLights();
 
@@ -288,20 +290,19 @@ function initObjects() {
 	initCylinderPipes(1, 1, 10, 1, 1, 3, 32, 1, false);
 
 	//addCoinsRandomly(); // DO COLLISION CHECKS
-	initFlower(5, 5);
-	initFlower(-10,5);
+	initFlower(6, 6);
+ 	initFlower(-13, 1);
 	// addDecorRandomly(); // DO COLLISION CHECKS, takes up a lot of mem.
 	initTetrahedron(0, 0, 0);
-	initSphere(); // Player will be shooting white balls
+	// initSphere(); // Player will be shooting white balls
 }
 
+export function initSphere() {
+	var geometry = new THREE.SphereGeometry( .2, 64, 16 );
+	var material = new THREE.MeshPhongMaterial( { color: white } );
+	var sphere = new THREE.Mesh( geometry, material );
 
-function initSphere() {
-	const geometry = new THREE.SphereGeometry( .2, 64, 16 );
-	const material = new THREE.MeshPhongMaterial( { color: white } );
-	const sphere = new THREE.Mesh( geometry, material );
-
-	sphere.position.set(0, 3, 0);
+	sphere.position.set(camera.position.x, camera.position.y, camera.position.z);
 	sphere.castShadow = true;
 	sphere.receiveShadow = true;
 	scene.add( sphere );
@@ -611,6 +612,17 @@ function animate() {
 	renderer.render( scene, camera );
 	var delta = clock.getDelta();
 	if ( mixer ) mixer.update( delta );
+
+	var numSpheresToShoot = spheresShot.length;
+
+	for(var idx = 0; idx < 1; idx+=1){
+		if( spheresShot[idx] === undefined ) continue;
+		if( spheresShot[idx].alive == false ){
+			spheresShot.splice(idx, 1);
+			continue;
+		}
+		spheresShot[idx].position.add(spheresShot[idx].velocity);
+	}
 }
 
 // Instantiate a loader
@@ -676,6 +688,48 @@ function initFlower(x = 0, z = 0) {
 			} );		
 			scene.add( gltf.scene );
 	});
+}
+
+export const addObjectClickListener = (
+	camera,
+	scene,
+	raycaster,
+	objectShotAt,
+	onMouseClick,
+  ) => {
+
+	// camera - Three.Camera
+	// scene - Three.Scene
+	// raycaster - Three.Raycaster
+	// objectShotAt - Three.Object
+	// onMouseClick - callback
+	
+	const objectShotAtId = objectShotAt.uuid;
+	let mouse = new THREE.Vector2();
+
+	document.addEventListener(
+	  "click",
+	  (event) => {
+		mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+		mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+		raycaster.setFromCamera(mouse, camera);
+
+		const intersects = raycaster.intersectObjects(scene.children);
+
+		const isIntersected = intersects.find(
+		  (intersectedEl) => intersectedEl.object.uuid === objectShotAtId
+		);
+		if (isIntersected) {
+		  onMouseClick(event);
+		}
+	  },
+	  false
+	);
+  };
+
+function onMouseClick(event){
+	alert('Object has been shot at!');
 }
 
 window.onload = main;
