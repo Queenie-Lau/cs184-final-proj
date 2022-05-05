@@ -8,7 +8,7 @@ import { Movement} from './js/movement/FirstPersonMovement.js';
 var renderer, scene, camera, movement, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer, coinsGroup; 
 
 var player = {height: 1.8, speed: 0.3, turnSpeed: Math.PI * 0.02};
-var platform = {width: 40, height: 40};
+var platform = {width: 30, height: 30};
 //var velocity = new THREE.Vector3();
 
 clock = new THREE.Clock();
@@ -56,7 +56,7 @@ function addSceneObjects() {
 	initFloor();
 	initIsland();
 	initPlayerGun();
-	initGoombaEnemies();
+	initGoombaEnemies(-5, 0.1, 4);
 	initSkyBox();
 	scene.fog = new THREE.Fog(0xDFE9F3, -40, 100);
 	scene.background = new THREE.Color("rgb(135, 206, 235)");
@@ -157,7 +157,7 @@ function initObjects() {
 	initCylinderPipes(1, 1, 15, 1, 1, 3, 32, 1, false);
 
 	//addCoinsRandomly(); // DO COLLISION CHECKS
-	initSceneDecor(-10, 15);
+	initFlower(-10, 5);
 	// addDecorRandomly(); // DO COLLISION CHECKS, takes up a lot of mem.
 	initTetrahedron(0, 0, 0);
 	initSphere(); // Player will be shooting white balls
@@ -383,7 +383,7 @@ function addDecorRandomly() {
 	for (let i = 0; i < 20; i++) {
 		var ranX = Math.floor(Math.random() * platform.width - 10) + -5;
 		var ranZ = Math.floor(Math.random() * platform.width - 10) - 5;
-		initSceneDecor(ranX, ranZ);
+		initFlower(ranX, ranZ);
 	}
 }
 
@@ -447,14 +447,15 @@ function animate() {
 const loader = new GLTFLoader();
 
 // Load a glTF goomba enemey
-function initGoombaEnemies() {
+function initGoombaEnemies(x = 0, y = 0, z = 0) {
 	loader.load(
 		// resource URL
 		'assets/animated_goomba/animated_goomba.gltf',
 		// called when the resource is loaded
 		function ( gltf ) {
 			gltf.scene.scale.set(0.02, 0.02, 0.02); 
-			gltf.scene.position.set(-5, 0.1, 4);
+			gltf.scene.position.set(x, y, z);
+			gltf.scene.rotateY(90);
 			gltf.scene.traverse( function( node ) {
 				if ( node.isMesh ) {
 					node.castShadow = true;
@@ -490,13 +491,14 @@ function texturizeFloor() {
 	floorTexture.repeat.set( 4, 4 );	
 }
 
-function initSceneDecor(x = 0, z = 0) {
+function initFlower(x = 0, z = 0) {
 	loader.load(
 		// resource URL
 		'assets/mario_bros_ice_flower/scene.gltf',
 		function ( gltf ) {
 			gltf.scene.scale.set(0.5, 0.5, 0.5); 
-			gltf.scene.position.set(x + 3, 0.5, z);
+			gltf.scene.position.set(x, 0.5, z);
+			gltf.scene.rotateY(60);
 			gltf.scene.traverse( function( node ) {
 				if ( node.isMesh ) {
 					node.castShadow = true;
