@@ -178,19 +178,30 @@ function initMusic() {
 
 // Instantiate the floor mesh
 function initFloor() {
-	const floorGeometry = new THREE.PlaneGeometry( platform.width, platform.height, 40);
+	var scale = new THREE.Vector3(platform.width, platform.height, 1);
+	var position = new THREE.Vector3(0,0,0);
+	var mass = 0;
+	var quat = {x: -Math.PI / 2, y: 0, z: 0, w: 1};
+	//const floorGeometry = new THREE.PlaneGeometry(scale.x, scale.y, scale.z); 
 	//const floorMaterial = new THREE.MeshPhongMaterial( {color: white, wireframe: WIREFRAME} )
 	const floorMaterial = new THREE.MeshPhongMaterial({map : floorTexture})
-	const meshFloor = new THREE.Mesh( floorGeometry, floorMaterial );
+	//const meshFloor = new THREE.Mesh( floorGeometry, floorMaterial );
 
 	// const displacementMap = new THREE.TextureLoader().load(
 	// 	'assets/mario_assets/grass_displacement.jpg'
 	// )
 	// floorMaterial.displacementMap = displacementMap
 
-	meshFloor.rotation.x -= Math.PI / 2;
-	meshFloor.receiveShadow = true;
-	scene.add(meshFloor);
+	//meshFloor.rotation.x = quat.x;
+	//meshFloor.receiveShadow = true;
+	//scene.add(meshFloor);
+
+
+	var scale = new THREE.Vector3(platform.width, 1,  platform.height);
+	var position = new THREE.Vector3(0,-0.5,0);
+	var mass = 0;
+	var quat = {x: 0, y: 0, z: 0, w: 1};	
+	rigidBody_List.push(sceneManager.initCube(position, scale, mass, floorMaterial, quat));
 }
 
 function initIsland() {
@@ -203,7 +214,7 @@ function initIsland() {
 	const cube = new THREE.Mesh( geometry, wallMaterial );
 	cube.position.set(0, -5.2, 0);
 
-	scene.add( cube );
+	scene.add( cube );	
 }
 
 // Instantiate player obstacles
@@ -355,6 +366,7 @@ function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color
 	if (color == white) {
 		wallMaterial = new THREE.MeshPhongMaterial( { color: white } );
 	}
+
 
 	const cube = new THREE.Mesh( geometry, wallMaterial );
 	cube.position.set(x, y, z);
@@ -646,7 +658,7 @@ function onMouseDown(event) {
 	physicsWorld.addRigidBody( rBody);
 
 	tmpPos.copy(raycaster.ray.direction);
-	tmpPos.multiplyScalar(100);
+	tmpPos.multiplyScalar(30);
 
 	rBody.setLinearVelocity(new Ammo.btVector3(tmpPos.x, tmpPos.y, tmpPos.z));
 
