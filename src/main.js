@@ -7,7 +7,7 @@ import { Movement} from './js/movement/FirstPersonMovement.js';
 
 var renderer, scene, camera, movement, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer, coinsGroup; 
 
-var player = {height: 1.8, speed: 0.3, turnSpeed: Math.PI * 0.02};
+var player = {height: 1.8, speed: 0.3, turnSpeed: Math.PI * 0.02, shootDelay: 0};
 var platform = {width: 30, height: 30};
 //var velocity = new THREE.Vector3();
 
@@ -15,6 +15,7 @@ clock = new THREE.Clock();
 //var prevTime = performance.now();
 
 var WIREFRAME = false;
+var spheresShot = [];
 
 var white = 0xffffff;
 var blue = 0x039dfc;
@@ -29,6 +30,7 @@ function main() {
 	coinsGroup = new THREE.Group();
 
 	scene = new THREE.Scene();
+	const raycaster = new THREE.Raycaster();
 
 	// Instantiate the renderer
 	renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -41,7 +43,10 @@ function main() {
 	renderer.shadowMap.enabled = true;
 	renderer.shadowMap.type = THREE.BasicShadowMap;
 	document.body.appendChild( renderer.domElement );
-
+	
+	/** Event listner for mouse clicks if we were to go the "clicking == shooting" route */
+	// addObjectClickListener(camera, scene, raycaster, coinsGroup, onMouseClick());
+	
 	movement = new Movement( camera, renderer.domElement ); 
 	initMusic()
 	animate();
@@ -156,23 +161,37 @@ function initObjects() {
 	initCylinderPipes(1, 1, 10, 1, 1, 3, 32, 1, false);
 
 	//addCoinsRandomly(); // DO COLLISION CHECKS
-	initFlower(5, 5);
-	initFlower(-10,5);
+	initFlower(6, 6);
+ 	initFlower(-13, 1);
 	// addDecorRandomly(); // DO COLLISION CHECKS, takes up a lot of mem.
 	initTetrahedron(0, 0, 0);
-	initSphere(); // Player will be shooting white balls
+	// initSphere(); // Player will be shooting white balls
 }
 
-function initSphere() {
-	const geometry = new THREE.SphereGeometry( .2, 64, 16 );
-	const material = new THREE.MeshPhongMaterial( { color: white } );
-	const sphere = new THREE.Mesh( geometry, material );
+export function initSphere() {
+	var geometry = new THREE.SphereGeometry( .2, 64, 16 );
+	var material = new THREE.MeshPhongMaterial( { color: white } );
+	var sphere = new THREE.Mesh( geometry, material );
 
-	sphere.position.set(0, 3, 0);
+	sphere.position.set(camera.position.x, camera.position.y, camera.position.z);
 	sphere.castShadow = true;
 	sphere.receiveShadow = true;
 	scene.add( sphere );
 	let sphereBoundingBox = new THREE.Sphere(sphere.position, 1);
+	shootSphere(sphere);
+}
+
+function shootSphere(sphere) {
+	sphere.velocity = new THREE.Vector3(-Math.sin(camera.rotation.y), 0, Math.cos(camera.rotation.y));
+	spheresShot.push(sphere);
+
+	sphere.alive = true;
+		setTimeout(function(){
+			sphere.alive = false;
+			scene.remove(sphere);
+		}, 3000);
+	
+	player.shootDelay = 30;
 }
 
 function initTetrahedron(x = 0, y = 0, z = 0) {
@@ -441,6 +460,15 @@ function animate() {
 	renderer.render( scene, camera );
 	var delta = clock.getDelta();
 	if ( mixer ) mixer.update( delta );
+
+	for(var idx = 0; idx < spheresShot.length; idx+=1){
+		if( spheresShot[idx] === undefined ) continue;
+		if( spheresShot[idx].alive == false ){
+			spheresShot.splice(idx, 1);
+			continue;
+		}
+		spheresShot[idx].position.add(spheresShot[idx].velocity);
+	}
 }
 
 // Instantiate a loader
@@ -506,6 +534,48 @@ function initFlower(x = 0, z = 0) {
 			} );		
 			scene.add( gltf.scene );
 	});
+}
+
+export const addObjectClickListener = (
+	camera,
+	scene,
+	raycaster,
+	objectShotAt,
+	onMouseClick,
+  ) => {
+
+	// camera - Three.Camera
+	// scene - Three.Scene
+	// raycaster - Three.Raycaster
+	// objectShotAt - Three.Object
+	// onMouseClick - callback
+	
+	const objectShotAtId = objectShotAt.uuid;
+	let mouse = new THREE.Vector2();
+
+	document.addEventListener(
+	  "click",
+	  (event) => {
+		mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+		mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+		raycaster.setFromCamera(mouse, camera);
+
+		const intersects = raycaster.intersectObjects(scene.children);
+
+		const isIntersected = intersects.find(
+		  (intersectedEl) => intersectedEl.object.uuid === objectShotAtId
+		);
+		if (isIntersected) {
+		  onMouseClick(event);
+		}
+	  },
+	  false
+	);
+  };
+
+function onMouseClick(event){
+	alert('Object has been shot at!');
 }
 
 window.onload = main;
