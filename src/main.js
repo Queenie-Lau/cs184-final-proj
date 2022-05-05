@@ -360,7 +360,7 @@ function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color
 
 	var position = new THREE.Vector3(x, y, z);
 	var scale = new THREE.Vector3(width, height, depth);
-	var mass = 0;
+	var mass = 3;
 
 	var cube_to_add = sceneManager.initCube(position, scale, mass, wallMaterial);
 	cube.userData.tag = "cube"; // not setting correctly..?
@@ -817,9 +817,7 @@ function onMouseDown(event) {
 		scene.remove(ball);
 	}, 500);
 
-	/** TESTING */
 	var intersects = raycaster.intersectObjects( scene.children );
-
     if ( intersects.length > 0 ) {
 		console.log("HIT AN OBJECT!");
 		console.log(intersects[ 0 ].object);
@@ -830,7 +828,6 @@ function onMouseDown(event) {
 		console.log("# Coins Hit", coinCount);
 
 		if (intersectedObject.name == "coin") {
-			console.log("Went in here..");
 			updateCounter(coinCount, goombaCount, "coin");
 		}
 
