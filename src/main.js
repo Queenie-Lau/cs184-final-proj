@@ -23,6 +23,7 @@ var WIREFRAME = false;
 var white = 0xffffff;
 var blue = 0x039dfc;
 var brown = 0x964B00;
+var gray = 0xa9a9a9;
 
 // initialize scene
 function main() {
@@ -30,7 +31,7 @@ function main() {
 
 	//controls = new OrbitControls( camera, renderer.domElement );
 	//movement = new Movement( camera, renderer.domElement ); 
-	//initMusic()
+	//()
 	//animate();
 }
 
@@ -48,13 +49,15 @@ function start(){
 	initGraphicsWorld();
 
 	movement = new Movement( camera, renderer.domElement ); 
+	tmpTransformation = new Ammo.btTransform();
 	sceneManager = new SceneManager ( scene, physicsWorld, renderer.domElement );
-	rigidBody_List.push( sceneManager.createGround() );
+	//rigidBody_List.push( sceneManager.createGround() );
 
 	addSceneObjects();
 
 	addEventHandlers();
 
+	//initMusic();
 	render();
 }
 
@@ -102,8 +105,15 @@ function render() {
 	let deltaTime = clock.getDelta();
 	updatephysicsWorld(deltaTime);
 	renderer.render(scene, camera);
-	requestAnimationFrame(render);
 	movement.update();
+
+	coinsGroup.children.forEach(child => {
+		child.rotateZ(-0.1);
+	});
+
+	requestAnimationFrame(render);
+	var delta = clock.getDelta();
+	if ( mixer ) mixer.update( delta );
 }
 
 function updatephysicsWorld(deltaTime) {
@@ -116,15 +126,11 @@ function updatephysicsWorld(deltaTime) {
 		let motionState = Physics_Obj.getMotionState();
 		if(motionState) {
 			motionState.getWorldTransform(tmpTransformation);
-			console.log("HELLOO", tmpTransformation);
-			if (tmpTransformation) {
-				let new_pos = tmpTransformation.getOrigin();
-				let new_qua = tmpTransformation.getRotation();
+			let new_pos = tmpTransformation.getOrigin();
+			let new_qua = tmpTransformation.getRotation();
 
-				Graphics_Obj.position.set(new_pos.x(), new_pos.y(), new_pos.z());
-				Graphics_Obj.quaternion.set(new_qua.x, new_qua.y, new_qua.z, new_qua.w);
-	
-			}
+			Graphics_Obj.position.set(new_pos.x(), new_pos.y(), new_pos.z());
+			Graphics_Obj.quaternion.set(new_qua.x, new_qua.y, new_qua.z, new_qua.w);
 		}
 	}
 }
@@ -247,43 +253,7 @@ function initObjects() {
 	// initSphere(); // Player will be shooting white balls
 }
 
-export function initSphere() {
-	var geometry = new THREE.SphereGeometry( .2, 64, 16 );
-	var material = new THREE.MeshPhongMaterial( { color: white } );
-	var sphere = new THREE.Mesh( geometry, material );
 
-	sphere.position.set(camera.position.x, camera.position.y, camera.position.z);
-	sphere.castShadow = true;
-	sphere.receiveShadow = true;
-	scene.add( sphere );
-	let sphereBoundingBox = new THREE.Sphere(sphere.position, 1);
-
-	//AMMO related code
-	let transform = new Ammo.btTransform();
-	transform.setIdentity();
-
-	transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
-	transform.setRotation(new Ammo.btQuaternion( 0, 0, 0, 1));
-	let defaultMotionState = new Ammo.btDefaultMotionState(transform);
-
-	let structColShape = new Ammo.btBoxShape( new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
-	structColShape.setMargin(0.05);
-
-	let localIntertia = new Ammo.btVector3(0,0,0);
-	structColShape.calculateLocalInertia(mass, localIntertia);
-
-	let rbInfo = new Ammo.btRigidBodyConstructionInfo(
-		mass,
-		defaultMotionState,
-		structColShape,
-		localIntertia
-	);
-	let rBody = new Ammo.btRigidBody(rbInfo);
-	physicsWorld.addRigidBody( rBody);
-
-	newCube.userData.physicsBody = rBody;
-	rigidBody_List.push(newCube);
-}
 
 function initTetrahedron(x = 0, y = 0, z = 0) {
 	const radius = 6;
@@ -449,7 +419,7 @@ function initTree(x = 0, z = 0, width = 1.5, height = 4, scale = 5) {
 
 	
 	const trunkGeometry = new THREE.CylinderGeometry( trunkRadius , trunkRadius, trunkHeight);
-	const trunkMaterial = new THREE.MeshPhongMaterial({ map: treeBarkTexture, overdraw: 0.1 });
+	const trunkMaterial = new THREE.MeshPhongMaterial({ map: treeBarkTexture });
 	const treeTrunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
 	treeTrunk.position.set(x, trunkHeight / 2, z);
 	treeTrunk.receiveShadow = true;
@@ -642,13 +612,13 @@ function onMouseDown(event) {
 	tmpPos.add(raycaster.ray.origin);
 
 	let pos = {x:tmpPos.x, y:tmpPos.y, z:tmpPos.z};
-	let radius = 1;
+	let radius = 0.25;
 	let quat = {x:0, y:0, z:0, w:1};
 	let mass = 1;
 
 	let ball = new THREE.Mesh(
 		new THREE.SphereBufferGeometry(radius),
-		new THREE.MeshToonMaterial({emissive: white, emissiveIntensity:0.8})
+		new THREE.MeshToonMaterial({emissive: 0x000000, emissiveIntensity:0.8})
 	);
 	ball.position.set(pos.x, pos.y, pos.z);
 	scene.add(ball);
@@ -662,14 +632,14 @@ function onMouseDown(event) {
 	let colShape = new Ammo.btSphereShape( radius );
 	colShape.setMargin(0.05);
 
-	let localIntertia = new Ammo.btVector3(0,0,0);
-	colShape.calculateLocalInertia(mass, localIntertia);
+	let localInertia = new Ammo.btVector3(0,0,0);
+	colShape.calculateLocalInertia(mass, localInertia);
 
 	let rbInfo = new Ammo.btRigidBodyConstructionInfo(
 		mass,
 		motionState,
 		colShape,
-		localIntertia
+		localInertia
 	);
 	let rBody = new Ammo.btRigidBody(rbInfo);
 	physicsWorld.addRigidBody( rBody);
@@ -684,48 +654,8 @@ function onMouseDown(event) {
 }
 
 
-
-export const addObjectClickListener = (
-	camera,
-	scene,
-	raycaster,
-	objectShotAt,
-	onMouseClick,
-  ) => {
-
-	// camera - Three.Camera
-	// scene - Three.Scene
-	// raycaster - Three.Raycaster
-	// objectShotAt - Three.Object
-	// onMouseClick - callback
-	
-	const objectShotAtId = objectShotAt.uuid;
-	let mouse = new THREE.Vector2();
-
-	document.addEventListener(
-	  "click",
-	  (event) => {
-		mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-		mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-		raycaster.setFromCamera(mouse, camera);
-
-		const intersects = raycaster.intersectObjects(scene.children);
-
-		const isIntersected = intersects.find(
-		  (intersectedEl) => intersectedEl.object.uuid === objectShotAtId
-		);
-		if (isIntersected) {
-		  onMouseClick(event);
-		}
-	  },
-	  false
-	);
-  };
-
 function addEventHandlers() {
 	window.addEventListener('mousedown', onMouseDown, false);
-	//window.addEventListener('resize', onWindowResize, false);
 }
 
 window.onload = main;

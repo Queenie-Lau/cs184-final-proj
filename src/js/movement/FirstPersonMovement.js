@@ -5,7 +5,6 @@ import {
 } from '../three.js';
 
 import { PointerLockControls } from './PointerLockControls.js';
-import { initSphere } from "/src/main.js";
 
 var controls; 
 
