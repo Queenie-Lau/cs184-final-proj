@@ -10,7 +10,8 @@ var renderer, scene, camera, movement, skybox, skyboxGeo, floorTexture, pipeText
 var sceneManager;
 var shotBallInsideScene;
 var coinsGroup = new THREE.Group();
-var coinCount;
+var coinCount = 0;
+var goombaCount = 0;
 var cbContactResult, cbContactPairResult;
 var intersectedObject;
 //const raycaster = new THREE.Raycaster();
@@ -108,10 +109,6 @@ function render() {
 	updatephysicsWorld(deltaTime);
 	renderer.render(scene, camera);
 	movement.update();
-
-	if (shotBallInsideScene) {
-		coinCount += 1;
-	}
 
 	coinsGroup.children.forEach(child => {
 		child.rotateZ(-0.1);
@@ -582,7 +579,7 @@ function checkForCollisions() {
 
 			var intersectedObjectWorldPosition = intersectedObject.position;
 			console.log("Intersected object position: ", intersectedObjectWorldPosition);
-			console.log(worldPos1.x(), worldPos1.y(), worldPos1.z());
+			console.log("World positions: ", worldPos1.x(), worldPos1.y(), worldPos1.z());
 			// console.log(Math.ceil(worldPos1.x()), Math.ceil(worldPos1.y()), Math.ceil(worldPos1.z()));
 			
 			// set 0.3 threshold for now
@@ -650,15 +647,22 @@ function initPlayerGun() {
 	});
 }
 
-function updateCounter(coinCount, goombaCount, type) {
+function updateCounter(currCoins, currGoomba, type) {
 	if (type == 'coin') {
-		var numCoins = coinCount + 1;
+		var numCoins = currCoins + 1;
+		coinCount = numCoins;
 		document.getElementById("coin-text").innerText = numCoins;
+		removeIntersectedCoinAnimation();
 	}
 	else {
-		var numGoombas = goombaCount + 1;
+		var numGoombas = currGoomba + 1;
+		goombaCount = numGoombas;
 		document.getElementById("goomba-text").innerText = numGoombas;
 	}
+}
+
+function removeIntersectedCoinAnimation() {
+	scene.remove(intersectedObject); // obj won't remove.
 }
 
 function animate() {
@@ -815,6 +819,14 @@ function onMouseDown(event) {
 		console.log(intersects[ 0 ].object.name); // get name of object
 		console.log("Object world position:", intersects[ 0 ].object.position); // get WORLD position
 		intersectedObject = intersects[ 0 ].object;
+
+		console.log("# Coins Hit", coinCount);
+
+		if (intersectedObject.name == "coin") {
+			console.log("Went in here..");
+			updateCounter(coinCount, goombaCount, "coin");
+		}
+
 	}
 }
 
