@@ -128,9 +128,10 @@ function updatephysicsWorld(deltaTime) {
 			motionState.getWorldTransform(tmpTransformation);
 			let new_pos = tmpTransformation.getOrigin();
 			let new_qua = tmpTransformation.getRotation();
+			//console.log(new_pos.x(), new_pos.y(), new_pos.z());
 
 			Graphics_Obj.position.set(new_pos.x(), new_pos.y(), new_pos.z());
-			Graphics_Obj.quaternion.set(new_qua.x, new_qua.y, new_qua.z, new_qua.w);
+			//Graphics_Obj.quaternion.set(new_qua.x, new_qua.y, new_qua.z, new_qua.w);
 		}
 	}
 }
@@ -614,11 +615,11 @@ function onMouseDown(event) {
 	let pos = {x:tmpPos.x, y:tmpPos.y, z:tmpPos.z};
 	let radius = 0.25;
 	let quat = {x:0, y:0, z:0, w:1};
-	let mass = 1;
+	let mass = 0.5;
 
 	let ball = new THREE.Mesh(
 		new THREE.SphereBufferGeometry(radius),
-		new THREE.MeshToonMaterial({emissive: 0x000000, emissiveIntensity:0.8})
+		new THREE.MeshToonMaterial({emissive: 0xff2bed, emissiveIntensity:0.8})
 	);
 	ball.position.set(pos.x, pos.y, pos.z);
 	scene.add(ball);
