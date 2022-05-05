@@ -12,6 +12,7 @@ var shotBallInsideScene;
 var coinsGroup = new THREE.Group();
 var coinCount;
 var cbContactResult, cbContactPairResult;
+var intersectedObject;
 //const raycaster = new THREE.Raycaster();
 //const pointer = new THREE.Vector2();
 
@@ -189,7 +190,6 @@ function initFloor() {
 	const floorMaterial = new THREE.MeshPhongMaterial({map : floorTexture})
 	var scale = new THREE.Vector3(platform.width, 1,  platform.height);
 	var position = new THREE.Vector3(0,-0.5,0);
-	var mass = 0;
 	var quat = {x: 0, y: 0, z: 0, w: 1};	
 	rigidBody_List.push(sceneManager.initCube(position, scale, mass, floorMaterial, quat));
 }
@@ -555,28 +555,44 @@ function checkForCollisions() {
 			let localPos1 = contactPoint.get_m_localPointB();
 
 
-			console.log({
-				manifoldIndex: i, 
-				contactIndex: j, 
-				distance: distance, 
-				object0:{
-				 tag: tag0,
-				 velocity: {x: velocity0.x(), y: velocity0.y(), z: velocity0.z()},
-				 worldPos: {x: worldPos0.x(), y: worldPos0.y(), z: worldPos0.z()},
-				 localPos: {x: localPos0.x(), y: localPos0.y(), z: localPos0.z()}
-				},
-				object1:{
-				 tag: tag1,
-				 velocity: {x: velocity1.x(), y: velocity1.y(), z: velocity1.z()},
-				 worldPos: {x: worldPos1.x(), y: worldPos1.y(), z: worldPos1.z()},
-				 localPos: {x: localPos1.x(), y: localPos1.y(), z: localPos1.z()}
-				}
-			   });
+			// console.log({
+			// 	manifoldIndex: i, 
+			// 	contactIndex: j, 
+			// 	distance: distance, 
+			// 	object0:{
+			// 	 tag: tag0,
+			// 	 velocity: {x: velocity0.x(), y: velocity0.y(), z: velocity0.z()},
+			// 	 worldPos: {x: worldPos0.x(), y: worldPos0.y(), z: worldPos0.z()},
+			// 	 localPos: {x: localPos0.x(), y: localPos0.y(), z: localPos0.z()}
+			// 	},
+			// 	object1:{
+			// 	 tag: tag1,
+			// 	 velocity: {x: velocity1.x(), y: velocity1.y(), z: velocity1.z()},
+			// 	 worldPos: {x: worldPos1.x(), y: worldPos1.y(), z: worldPos1.z()},
+			// 	 localPos: {x: localPos1.x(), y: localPos1.y(), z: localPos1.z()}
+			// 	}
+			//    });
 			// console.log(isBallTouchingAnotherObject(ballObject)) breaks.
 
 			// Manually check distances for now and get object closest to target
-			// 
+			// check distances & get the object hit - either coin or block
 
+			// var position = new THREE.Vector3();
+			// position.getPositionFromMatrix( scene.matrixWorld );
+
+			var intersectedObjectWorldPosition = intersectedObject.position;
+			console.log("Intersected object position: ", intersectedObjectWorldPosition);
+			console.log(worldPos1.x(), worldPos1.y(), worldPos1.z());
+			// console.log(Math.ceil(worldPos1.x()), Math.ceil(worldPos1.y()), Math.ceil(worldPos1.z()));
+			
+			// set 0.3 threshold for now
+			if ( (intersectedObjectWorldPosition.x - worldPos1.x()) <= 0.3 ) {
+				if ( (intersectedObjectWorldPosition.y - worldPos1.y()) <= 0.3 ) {
+					if ( (intersectedObjectWorldPosition.z - worldPos1.z()) <= 0.3 ) {
+						console.log("Correctly hit an object!")
+					}
+				}
+			}
 		}
 	}
 }
@@ -796,6 +812,9 @@ function onMouseDown(event) {
     if ( intersects.length > 0 ) {
 		console.log("HIT AN OBJECT!");
 		console.log(intersects[ 0 ].object);
+		console.log(intersects[ 0 ].object.name); // get name of object
+		console.log("Object world position:", intersects[ 0 ].object.position); // get WORLD position
+		intersectedObject = intersects[ 0 ].object;
 	}
 }
 
