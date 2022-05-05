@@ -156,7 +156,8 @@ function initObjects() {
 	initCylinderPipes(1, 1, 10, 1, 1, 3, 32, 1, false);
 
 	//addCoinsRandomly(); // DO COLLISION CHECKS
-	initSceneDecor(5, 5);
+	initFlower(5, 5);
+	initFlower(-10,5);
 	// addDecorRandomly(); // DO COLLISION CHECKS, takes up a lot of mem.
 	initTetrahedron(0, 0, 0);
 	initSphere(); // Player will be shooting white balls
@@ -378,7 +379,7 @@ function addCoinsRandomly() {
 	}
 }
 
-function addDecorRandomly() {
+function addFlowersRandomly() {
 	for (let i = 0; i < 20; i++) {
 		var ranX = Math.floor(Math.random() * platform.width - 10) + -5;
 		var ranZ = Math.floor(Math.random() * platform.width - 10) - 5;
