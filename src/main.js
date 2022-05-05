@@ -11,8 +11,8 @@ var renderer, scene, camera, movement, skybox, skyboxGeo, floorTexture, pipeText
 //const pointer = new THREE.Vector2();
 
 var player = {height: 1.8, speed: 0.3, turnSpeed: Math.PI * 0.02};
-var id = {coin: "coin", tree: "tree", regularBox: "regBox", powerUpBox: "powBox", pipe: "pipe"}; // For raycasting/collision identification
-var platform = {width: 50, height: 50};
+var platform = {width: 30, height: 30};
+//var velocity = new THREE.Vector3();
 
 clock = new THREE.Clock();
 
@@ -47,8 +47,8 @@ function main() {
 	renderer.shadowMap.type = THREE.BasicShadowMap;
 	document.body.appendChild( renderer.domElement );
 
-	//controls = new OrbitControls( camera, renderer.domElement );
 	movement = new Movement( camera, renderer.domElement ); 
+	initMusic()
 	animate();
 }
 
@@ -59,18 +59,40 @@ function addSceneObjects() {
 	initLights();
 	texturizeFloor();
 	initFloor();
-	initCylinderPipes();
+	initIsland();
 	initPlayerGun();
-	initGoombaEnemies();
+	initGoombaEnemies(-5, 0.1, 4);
 	initSkyBox();
 	scene.fog = new THREE.Fog(0xDFE9F3, -40, 100);
 	scene.background = new THREE.Color("rgb(135, 206, 235)");
 	scene.add( coinsGroup );
+	// updateCounter(2, 2, "goomba"); // testing
+	// updateCounter(3, 4, "coin");
+}
+
+function initMusic() {
+	// create an AudioListener and add it to the camera
+	const listener = new THREE.AudioListener();
+	camera.add( listener );
+
+	// create a global audio source
+	const sound = new THREE.Audio( listener );
+
+	// load a sound and set it as the Audio object's buffer
+	const audioLoader = new THREE.AudioLoader();
+	
+	// Src: https://www.youtube.com/watch?v=tAaGKo4XVvM
+	audioLoader.load( 'music/overworld_theme.ogg', function( buffer ) {
+		sound.setBuffer( buffer );
+		sound.setLoop( true );
+		sound.setVolume( 0.5 );
+		sound.play();
+	});
 }
 
 // Instantiate the floor mesh
 function initFloor() {
-	const floorGeometry = new THREE.PlaneGeometry( platform.width, platform.height, 20);
+	const floorGeometry = new THREE.PlaneGeometry( platform.width, platform.height, 40);
 	//const floorMaterial = new THREE.MeshPhongMaterial( {color: white, wireframe: WIREFRAME} )
 	const floorMaterial = new THREE.MeshPhongMaterial({map : floorTexture})
 	const meshFloor = new THREE.Mesh( floorGeometry, floorMaterial );
@@ -85,42 +107,76 @@ function initFloor() {
 	scene.add(meshFloor);
 }
 
+function initIsland() {
+	const geometry = new THREE.BoxGeometry( platform.width, 10, platform.height );
+	const islandTexture = new THREE.TextureLoader().load( "assets/mario_assets/island_side.png" );
+	islandTexture.wrapS = THREE.RepeatWrapping;
+	islandTexture.wrapT = THREE.RepeatWrapping;
+
+	const wallMaterial = new THREE.MeshPhongMaterial({map : islandTexture})
+	const cube = new THREE.Mesh( geometry, wallMaterial );
+	cube.position.set(0, -5.2, 0);
+
+	scene.add( cube );
+}
+
 // Instantiate player obstacles
 function initObjects() {
-	initTree(-3, -6, 2.5, 6);
-	initTree(5, 5, 1, 8);
-	initTree(3, 3);
-	initTree(-4, 8);
-	initTree(8, 8);
-	initTree(-6, 9, 1.5, 4, 7);
-	initTree(-7.5, -7.5, 2, 6, 7);
+	initTree(-13, -6, 2.5, 6);
+   	initTree(5, 5, 1, 8);
+   	initTree(3, 3);
+   	//initTree(-6, 8);
+   	//initTree(8, 8);
+   	initTree(-6, 9, 1.5, 4, 7);
+   	initTree(-7.5, -7.5, 2, 6, 7);
+   	initTree(10, 1);
+   	initTree(14, 14);
+   	initTree(10, -10);
+
 	initCapsuleTree(.5, .5, -9, 0.4, 1);
 	initCapsuleTree(1, 1, 7, 0.4, 1);
+	initCapsuleTree(.1, .1, 30, 30, 30);
 
-	initBricks(6, .5, -4, .7, .7, .7, brown);
-	initBricks(4, 5, -10, .7, .7, .7, brown);
-	initBricks(-4, 1, 0, .7, .7, .7, brown);
+	initBricks(3.7, 4, 10, .7, .7, .7, brown);
+   	initBricks(4.4, 4, 10, .7, .7, .7, brown);
+   	initBricks(5.1, 4, 10, .7, .7, .7, brown);
+   	initBricks(6, .5, -4, .7, .7, .7, brown);
+   	initBricks(4, 5, -10, .7, .7, .7, brown);
+   	initBricks(-4, 1, 0, .7, .7, .7, brown);
 
-	initPowerUpBox(4, 3, 5, .7, .7, .7);
-	initPowerUpBox(10, 3, 5, .7, .7, .7);
-	initPowerUpBox(-4, 3, 5, .7, .7, .7);
+	initPowerUpBox(14, 3, 5, .7, .7, .7);
+   	initPowerUpBox(10, 3, 5, .7, .7, .7);
+   	initPowerUpBox(-14, 3, 5, .7, .7, .7);
+   	initPowerUpBox(3, 4, 10, .7, .7, .7);
 	
-	initCoin(-18, 2, 0, .3, .3, .1, 32, 1, false);
-	initCoin(-5, 2, 4, .3, .3, .1, 32, 1, false);
-	initCoin(3, 2, 4, .3, .3, .1, 32, 1, false);
-	addCoinsRandomly(); // DO COLLISION CHECKS
-	initSceneDecor(-10, 15);
+	initCoin(-18, 5, 0, .3, .3, .1, 32, 1, false);
+	initCoin(-5, 5, 4, .3, .3, .1, 32, 1, false);
+	initCoin(3, 5, 4, .3, .3, .1, 32, 1, false);
+	initCoin(1, 2, 15, .3, .3, .1, 32, 1, false);
+	initCoin(1.6, 4, 10, .3, .3, .1, 32, 1, false);
+	initCoin(1, 4, 10, .3, .3, .1, 32, 1, false);
+	initCoin(.4, 4, 10, .3, .3, .1, 32, 1, false);
+
+	initCylinderPipes(-8, 0, 5);
+	initCylinderPipes(1, 1, 10, 1, 1, 3, 32, 1, false);
+
+	//addCoinsRandomly(); // DO COLLISION CHECKS
+	initFlower(5, 5);
+	initFlower(-10,5);
 	// addDecorRandomly(); // DO COLLISION CHECKS, takes up a lot of mem.
 	initTetrahedron(0, 0, 0);
-	initSphere(); // Player will be shooting tennis? balls
+	initSphere(); // Player will be shooting white balls
 }
 
 function initSphere() {
-	const sphere = new THREE.Mesh(new THREE.SphereGeometry(1), new THREE.MeshPhongMaterial( { color: 0xff5191 }));
-	sphere.position.set(-10, 10, 0);
+	const geometry = new THREE.SphereGeometry( .2, 64, 16 );
+	const material = new THREE.MeshPhongMaterial( { color: white } );
+	const sphere = new THREE.Mesh( geometry, material );
+
+	sphere.position.set(0, 3, 0);
 	sphere.castShadow = true;
 	sphere.receiveShadow = true;
-
+	scene.add( sphere );
 	let sphereBoundingBox = new THREE.Sphere(sphere.position, 1);
 }
 
@@ -152,7 +208,7 @@ function initCoin(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height =
 	// scene.add( cylinder );
 }
 
-function initCylinderPipes(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height = 5, radialSegments = 32, heightSegments = 1, openEnded = false) {
+function initCylinderPipes(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height = 3, radialSegments = 32, heightSegments = 1, openEnded = false) {
 	const geometry =  new THREE.CylinderGeometry( radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded )
 
 	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/pipe.png" );
@@ -179,7 +235,7 @@ function initTorusForPipe(x = 0, y = 0, z = 0, radius = 1, tube = .2, radialSegm
 	const geometry = new THREE.TorusGeometry( radius, tube, radialSegments, tubularSegments );
 	const material = new THREE.MeshPhongMaterial( { color: 0x2CB01A } );
 	const torus = new THREE.Mesh( geometry, material );
-	torus.position.set(x, y+2.5, z);
+	torus.position.set(x, y + 1.5, z);
 	torus.castShadow = true;
 	torus.receiveShadow = true;
 	torus.rotateX(89.5);
@@ -212,15 +268,18 @@ function initSkyBox() {
 	scene.add(skybox);
 }
 
-function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1) {
+function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color) {
 	const geometry = new THREE.BoxGeometry(width, height, depth);
 
 	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/brick.png" );
 	pipeTexture.wrapS = THREE.RepeatWrapping;
 	pipeTexture.wrapT = THREE.RepeatWrapping;
-	pipeTexture.repeat.set( 4, 4 );	
 
-	const wallMaterial = new THREE.MeshPhongMaterial({map : pipeTexture})
+	var wallMaterial = new THREE.MeshPhongMaterial({map : pipeTexture})
+	if (color == white) {
+		wallMaterial = new THREE.MeshPhongMaterial( { color: white } );
+	}
+
 	const cube = new THREE.Mesh( geometry, wallMaterial );
 	cube.position.set(x, y, z);
 	cube.receiveShadow = true;
@@ -317,7 +376,7 @@ function initLights() {
 }
 
 // Instantiate boundaries
-function initBoundaries(color = blue) {
+function initBoundaries(color = white) {
 	initBricks(0, 0, platform.height / 2, platform.width + 1, 1.5, 1, color);
 	initBricks(0, 0, -platform.height / 2, platform.width + 1, 1.5, 1, color);
 	initBricks(platform.width / 2, 0, 0, 1, 1.5, platform.height, color);
@@ -336,11 +395,11 @@ function addCoinsRandomly() {
 	}
 }
 
-function addDecorRandomly() {
+function addFlowersRandomly() {
 	for (let i = 0; i < 20; i++) {
 		var ranX = Math.floor(Math.random() * platform.width - 10) + -5;
 		var ranZ = Math.floor(Math.random() * platform.width - 10) - 5;
-		initSceneDecor(ranX, ranZ);
+		initFlower(ranX, ranZ);
 	}
 }
 
@@ -349,49 +408,47 @@ function initPlayerGun() {
 		// resource URL
 		'assets/toy_gun/scene.gltf',
 		function ( gltf ) {
-			gltf.scene.scale.set(.2, .2, .2); 
-			gltf.scene.position.set(camera.position.x, camera.position.y, camera.position.z);
+			gltf.scene.scale.set(.5, .5, .5);
+			gltf.scene.position.set(camera.position.x - 20, camera.position.y - 10, camera.position.z - 13);
+			
+			// camera.position.normalize();
+			// gltf.scene.position.set(normalizedPos.x, normalizedPos.y, normalizedPos.z);
+			// gltf.scene.position.set( (camera.position.x - Math.sin(camera.rotation.y + Math.PI/6)) * 0.75, camera.position.y - 0.5 + Math.sin(20) * 0.01, camera.position.z + Math.cos(camera.rotation.y + Math.PI/6) * 0.75);
+
 			gltf.scene.traverse( function( node ) {
 				if ( node.isMesh ) {
 					node.castShadow = true;
 				}
 			} );
-			gltf.scene.rotateX(-90);		
+			gltf.scene.rotateX(-93);
+			
+			const box = new THREE.Box3().setFromObject(gltf.scene);
+			const size = box.getSize(new THREE.Vector3()).length();
+			const center = box.getCenter(new THREE.Vector3());
+
+			// Testing
+			console.log(center);
+			console.log("Gun position: ", gltf.scene.position.normalize());
+			console.log("Camera coordinates", camera.position.normalize());
+
 			scene.add( gltf.scene );
 	});
+}
+
+function updateCounter(coinCount, goombaCount, type) {
+	if (type == 'coin') {
+		var numCoins = coinCount + 1;
+		document.getElementById("coin-text").innerText = numCoins;
+	}
+	else {
+		var numGoombas = goombaCount + 1;
+		document.getElementById("goomba-text").innerText = numGoombas;
+	}
 }
 
 function animate() {
 	requestAnimationFrame(animate);
 	movement.update();
-
-	/*const time = performance.now();
-	const time_step_diff = ( time - prevTime ) / 1000;
-	velocity.x -= velocity.x * 10.0 * time_step_diff;
-	velocity.z -= velocity.z * 10.0 * time_step_diff;
-	velocity.y -= 9.8 * 100.0 * time_step_diff; // 100.0 = mass
-
-	*/
-	//raycaster.setFromCamera( pointer, camera );
-
-	// calculate objects intersecting the picking ray
-	/*const intersects = raycaster.intersectObjects( scene.children );
-
-	for ( let i = 0; i < intersects.length; i ++ ) {
-
-		//intersects[ i ].object.material.color.set( 0xff0000 );
-		var type = intersects[i].object.name;
-		switch (type) {
-			case id.coid: console.log("COIN"); break;
-			case id.tree: console.log("TREE"); break;
-			case id.powerUpBox: console.log("POWER UP BOX"); break;
-			case id.regularBox: console.log("BRICKS"); break;
-			case id.pip: console.log("PIPE"); break;
-		}
-		//console.log(intersects[i].object);
-
-	}*/
-	
 
 	coinsGroup.children.forEach(child => {
 		child.rotateZ(-0.1);
@@ -406,7 +463,7 @@ function animate() {
 const loader = new GLTFLoader();
 
 // Load a glTF goomba enemey
-function initGoombaEnemies() {
+function initGoombaEnemies(x = 0, y = 0, z = 0) {
 	loader.load(
 		// resource URL
 		'assets/animated_goomba/animated_goomba.gltf',
@@ -414,6 +471,7 @@ function initGoombaEnemies() {
 		function ( gltf ) {
 			gltf.scene.scale.set(0.02, 0.02, 0.02); 
 			gltf.scene.position.set(-5, 0.1, 4);
+			gltf.scene.rotateY(90);
 			gltf.scene.traverse( function( node ) {
 				if ( node.isMesh ) {
 					node.castShadow = true;
@@ -449,13 +507,14 @@ function texturizeFloor() {
 	floorTexture.repeat.set( 4, 4 );	
 }
 
-function initSceneDecor(x = 0, z = 0) {
+function initFlower(x = 0, z = 0) {
 	loader.load(
 		// resource URL
 		'assets/mario_bros_ice_flower/scene.gltf',
 		function ( gltf ) {
 			gltf.scene.scale.set(0.5, 0.5, 0.5); 
-			gltf.scene.position.set(x + 3, 0.5, z);
+			gltf.scene.position.set(x, 0.5, z);
+			gltf.scene.rotateY(60);
 			gltf.scene.traverse( function( node ) {
 				if ( node.isMesh ) {
 					node.castShadow = true;
@@ -463,20 +522,6 @@ function initSceneDecor(x = 0, z = 0) {
 			} );		
 			scene.add( gltf.scene );
 	});
-
-	// loader.load(
-	// 	// resource URL
-	// 	'assets/fire_flower_super_mario_bros/scene.gltf',
-	// 	function ( gltf ) {
-	// 		gltf.scene.scale.set(0.003, 0.003, 0.003); 
-	// 		gltf.scene.position.set(x, 0.01, z);
-	// 		gltf.scene.traverse( function( node ) {
-	// 			if ( node.isMesh ) {
-	// 				node.castShadow = true;
-	// 			}
-	// 		} );		
-	// 		scene.add( gltf.scene );
-	// });
 }
 
 window.onload = main;
