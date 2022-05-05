@@ -43,7 +43,7 @@ function main() {
 	document.body.appendChild( renderer.domElement );
 
 	movement = new Movement( camera, renderer.domElement ); 
-	// initMusic()
+	initMusic()
 	animate();
 }
 
@@ -120,22 +120,21 @@ function initObjects() {
 	initTree(-13, -6, 2.5, 6);
    	initTree(5, 5, 1, 8);
    	initTree(3, 3);
-   	initTree(-16, 8);
-   	initTree(16, 16);
+   	//initTree(-6, 8);
+   	//initTree(8, 8);
    	initTree(-6, 9, 1.5, 4, 7);
    	initTree(-7.5, -7.5, 2, 6, 7);
    	initTree(10, 1);
    	initTree(14, 14);
    	initTree(10, -10);
 
-
 	initCapsuleTree(.5, .5, -9, 0.4, 1);
 	initCapsuleTree(1, 1, 7, 0.4, 1);
 	initCapsuleTree(.1, .1, 30, 30, 30);
 
-	initBricks(3.7, 4, 15, .7, .7, .7, brown);
-   	initBricks(4.4, 4, 15, .7, .7, .7, brown);
-   	initBricks(5.1, 4, 15, .7, .7, .7, brown);
+	initBricks(3.7, 4, 10, .7, .7, .7, brown);
+   	initBricks(4.4, 4, 10, .7, .7, .7, brown);
+   	initBricks(5.1, 4, 10, .7, .7, .7, brown);
    	initBricks(6, .5, -4, .7, .7, .7, brown);
    	initBricks(4, 5, -10, .7, .7, .7, brown);
    	initBricks(-4, 1, 0, .7, .7, .7, brown);
@@ -143,21 +142,21 @@ function initObjects() {
 	initPowerUpBox(14, 3, 5, .7, .7, .7);
    	initPowerUpBox(10, 3, 5, .7, .7, .7);
    	initPowerUpBox(-14, 3, 5, .7, .7, .7);
-   	initPowerUpBox(3, 4, 15, .7, .7, .7);
+   	initPowerUpBox(3, 4, 10, .7, .7, .7);
 	
 	initCoin(-18, 5, 0, .3, .3, .1, 32, 1, false);
 	initCoin(-5, 5, 4, .3, .3, .1, 32, 1, false);
 	initCoin(3, 5, 4, .3, .3, .1, 32, 1, false);
 	initCoin(1, 2, 15, .3, .3, .1, 32, 1, false);
-	initCoin(1.6, 4, 15, .3, .3, .1, 32, 1, false);
-	initCoin(1, 4, 15, .3, .3, .1, 32, 1, false);
-	initCoin(.4, 4, 15, .3, .3, .1, 32, 1, false);
+	initCoin(1.6, 4, 10, .3, .3, .1, 32, 1, false);
+	initCoin(1, 4, 10, .3, .3, .1, 32, 1, false);
+	initCoin(.4, 4, 10, .3, .3, .1, 32, 1, false);
 
-	initCylinderPipes(-5, 0, 3);
-	initCylinderPipes(1, 1, 15, 1, 1, 3, 32, 1, false);
+	initCylinderPipes(-8, 0, 5);
+	initCylinderPipes(1, 1, 10, 1, 1, 3, 32, 1, false);
 
 	//addCoinsRandomly(); // DO COLLISION CHECKS
-	initFlower(-10, 5);
+	initSceneDecor(5, 5);
 	// addDecorRandomly(); // DO COLLISION CHECKS, takes up a lot of mem.
 	initTetrahedron(0, 0, 0);
 	initSphere(); // Player will be shooting white balls
@@ -454,7 +453,7 @@ function initGoombaEnemies(x = 0, y = 0, z = 0) {
 		// called when the resource is loaded
 		function ( gltf ) {
 			gltf.scene.scale.set(0.02, 0.02, 0.02); 
-			gltf.scene.position.set(x, y, z);
+			gltf.scene.position.set(-5, 0.1, 4);
 			gltf.scene.rotateY(90);
 			gltf.scene.traverse( function( node ) {
 				if ( node.isMesh ) {
