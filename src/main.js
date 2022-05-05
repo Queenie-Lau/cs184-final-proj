@@ -11,6 +11,7 @@ var sceneManager;
 var shotBallInsideScene;
 var coinsGroup = new THREE.Group();
 var coinCount;
+var cbContactResult, cbContactPairResult;
 //const raycaster = new THREE.Raycaster();
 //const pointer = new THREE.Vector2();
 
@@ -72,12 +73,9 @@ function initPhysicsWorld() {
 
 	physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
 	physicsWorld.setGravity(new Ammo.btVector3(0, -10, 0));
-	physicsWorld.contactP
+	initContactResultCallback();
+	initContactPairResultCallback();
 }
-
-// function checkForCollisions() {
-
-// }
 
 
 // Init Scene, Camera, Lighting, Renderer
@@ -143,6 +141,7 @@ function updatephysicsWorld(deltaTime) {
 			//Graphics_Obj.quaternion.set(new_qua.x, new_qua.y, new_qua.z, new_qua.w);
 		}
 	}
+	checkForCollisions();
 }
 
 
@@ -345,7 +344,7 @@ function initSkyBox() {
 }
 
 function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color) {
-	const geometry = new THREE.BoxGeometry(width, height, depth);
+	const cube = new THREE.BoxGeometry(width, height, depth);
 
 	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/brick.png" );
 	pipeTexture.wrapS = THREE.RepeatWrapping;
@@ -356,11 +355,12 @@ function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color
 		wallMaterial = new THREE.MeshPhongMaterial( { color: white } );
 	}
 
-
 	var position = new THREE.Vector3(x, y, z);
 	var scale = new THREE.Vector3(width, height, depth);
 	var mass = 0;
-	rigidBody_List.push( sceneManager.initCube(position, scale, mass, wallMaterial) );
+
+	var cube_to_add = sceneManager.initCube(position, scale, mass, wallMaterial);
+	rigidBody_List.push( cube_to_add );
 
 	/*
 	const cube = new THREE.Mesh( geometry, wallMaterial );
@@ -465,11 +465,121 @@ function initBoundaries(color = white) {
 	initBricks(-platform.width / 2, 0, 0, 1, 1.5, platform.height, color);
 }
 
-function checkCollisions() {
-	var cbCheckCollision = new Ammo.ConcreteContactResultCallback();
-	cbCheckCollision.hasContact = false;
-	cbCheckCollision.addSingleResult;
+function initContactResultCallback(){
+
+	cbContactResult = new Ammo.ConcreteContactResultCallback();
+
+	cbContactResult.addSingleResult = function(cp, colObj0Wrap, partId0, index0, colObj1Wrap, partId1, index1){
+
+		let contactPoint = Ammo.wrapPointer( cp, Ammo.btManifoldPoint );
+		const distance = contactPoint.getDistance();
+
+		if( distance > 0 ) return;
+
+		let colWrapper0 = Ammo.wrapPointer( colObj0Wrap, Ammo.btCollisionObjectWrapper );
+		let rb0 = Ammo.castObject( colWrapper0.getCollisionObject(), Ammo.btRigidBody );
+
+		let colWrapper1 = Ammo.wrapPointer( colObj1Wrap, Ammo.btCollisionObjectWrapper );
+		let rb1 = Ammo.castObject( colWrapper1.getCollisionObject(), Ammo.btRigidBody );
+
+		let threeObject0 = rb0.threeObject;
+		let threeObject1 = rb1.threeObject;
+		let tag, localPos, worldPos;
+
+		if ( threeObject0.userData.tag != "ball" ) {
+			tag = threeObject0.userData.tag;
+			localPos = contactPoint.get_m_localPointA();
+			worldPos = contactPoint.get_m_positionWorldOnA();
+
+		}
+		else 
+		{
+			tag = threeObject1.userData.tag;
+			localPos = contactPoint.get_m_localPointB();
+			worldPos = contactPoint.get_m_positionWorldOnB();
+		}
+
+		let localPosition = {x: localPos.x(), y: localPos.y(), z: localPos.z()};
+		let worldPosition = {x: worldPos.x(), y: worldPos.y(), z: worldPos.z()};
+
+		console.log( { tag, localPosition, worldPosition } );
+
+	}
 }
+
+function initContactPairResultCallback(){
+	cbContactPairResult = new Ammo.ConcreteContactResultCallback();
+	cbContactPairResult.hasContact = false;
+
+	cbContactPairResult.addSingleResult = function(cp, colObj0Wrap, partId0, index0, colObj1Wrap, partId1, index1){
+		let contactPoint = Ammo.wrapPointer( cp, Ammo.btManifoldPoint );
+		const distance = contactPoint.getDistance();
+		if( distance > 0 ) return;
+		this.hasContact = true;
+	}
+}
+
+function checkForCollisions() {
+	// tutorial src: 
+	// https://medium.com/@bluemagnificent/collision-detection-in-javascript-3d-physics-using-ammo-js-and-three-js-31a5569291ef
+	let dispatcher = physicsWorld.getDispatcher();
+	let numManifolds = dispatcher.getNumManifolds();
+	for ( let i = 0; i < numManifolds; i ++ ) {
+		let contactManifold = dispatcher.getManifoldByIndexInternal( i );
+		let numContacts = contactManifold.getNumContacts();
+
+		for ( let j = 0; j < numContacts; j++ ) {
+			let contactPoint = contactManifold.getContactPoint( j );
+
+			let rb0 = Ammo.castObject( contactManifold.getBody0(), Ammo.btRigidBody );
+			let rb1 = Ammo.castObject( contactManifold.getBody1(), Ammo.btRigidBody );
+
+			// Get ball + colliding cube
+			let cubeObject = rb0.threeObject;
+			let ballObject = rb1.threeObject;
+
+			if ( ! cubeObject && ! ballObject ) continue;
+			let userData0 = cubeObject ? cubeObject.userData : null;
+			let userData1 = ballObject ? ballObject.userData : null;
+			let tag0 = userData0 ? userData0.tag : "none";
+			let tag1 = userData1 ? userData1.tag : "none";
+
+			let distance = contactPoint.getDistance();
+			if( distance > 0.0 ) continue;
+
+			let velocity0 = rb0.getLinearVelocity();
+			let velocity1 = rb1.getLinearVelocity();
+			let worldPos0 = contactPoint.get_m_positionWorldOnA();
+			let worldPos1 = contactPoint.get_m_positionWorldOnB();
+			let localPos0 = contactPoint.get_m_localPointA();
+			let localPos1 = contactPoint.get_m_localPointB();
+
+			console.log({
+				manifoldIndex: i, 
+				contactIndex: j, 
+				distance: distance, 
+				object0:{
+				 tag: tag0,
+				 velocity: {x: velocity0.x(), y: velocity0.y(), z: velocity0.z()},
+				 worldPos: {x: worldPos0.x(), y: worldPos0.y(), z: worldPos0.z()},
+				 localPos: {x: localPos0.x(), y: localPos0.y(), z: localPos0.z()}
+				},
+				object1:{
+				 tag: tag1,
+				 velocity: {x: velocity1.x(), y: velocity1.y(), z: velocity1.z()},
+				 worldPos: {x: worldPos1.x(), y: worldPos1.y(), z: worldPos1.z()},
+				 localPos: {x: localPos1.x(), y: localPos1.y(), z: localPos1.z()}
+				}
+			   });
+			// console.log(isBallTouchingAnotherObject(ballObject)) breaks.
+		}
+	}
+}
+
+function isBallTouchingAnotherObject(ball) {
+	physicsWorld.contactTest( ball.userData.physicsBody , cbContactResult );
+}
+
 
 function addCoinsRandomly() {
 	for (let i = 0; i < 50; i++) {
@@ -631,6 +741,7 @@ function onMouseDown(event) {
 	var ball = new THREE.Mesh( geometry, material );
 
 	ball.position.set(pos.x, pos.y, pos.z);
+	ball.userData.tag = "ball";
 	scene.add(ball);
 	
 	let transform = new Ammo.btTransform();
@@ -661,6 +772,8 @@ function onMouseDown(event) {
 	rBody.setLinearVelocity(new Ammo.btVector3(tmpPos.x, tmpPos.y, tmpPos.z));
 	
 	rBody.threeObject = ball;
+	rBody.setFriction(4);
+	rBody.setRollingFriction(10);
 
 	ball.userData.physicsBody = rBody;
 	rigidBody_List.push(ball);
@@ -672,7 +785,6 @@ function onMouseDown(event) {
 		scene.remove(ball);
 	}, 500);
 }
-
 
 function addEventHandlers() {
 	window.addEventListener('mousedown', onMouseDown, false);

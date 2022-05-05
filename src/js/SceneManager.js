@@ -24,8 +24,9 @@ class SceneManager {
         function createCube(scale, position, mass, material, quat) {
             var geometry = new THREE.BoxBufferGeometry(scale.x, scale.y, scale.z);
             //var material = new THREE.MeshPhongMaterial({color: color});
-            let newCube = new THREE.Mesh( geometry, material );
+            var newCube = new THREE.Mesh( geometry, material );
             newCube.position.set(position.x, position.y, position.z);
+            
             scene.add(newCube);
 
             let transform = new Ammo.btTransform();
@@ -50,8 +51,8 @@ class SceneManager {
 
             let rBody = new Ammo.btRigidBody( rbInfo );
             physicsWorld.addRigidBody( rBody );
-
             newCube.userData.physicsBody = rBody;
+           
             return newCube;
         }
 
@@ -81,10 +82,9 @@ class SceneManager {
             physicsWorld.addRigidBody( rBody );
 
             mesh.userData.physicsBody = rBody;
+            mesh.userData.tag = "cube";
             return mesh;
         }
-
-        
 
         // API FUNCTIONS
         this.initCube = function(pos, scale, mass, material, quat = {x:0, y:0, z:0, w:1}) {
