@@ -17,6 +17,7 @@ class SceneManager {
         this.physicsWorld = physicsWorld;
 		this.domElement = domElement;
 
+        const convexBreaker = new ConvexObjectBreaker();
 
         /* Initialization and physics functions */
 
@@ -54,9 +55,37 @@ class SceneManager {
             newCube.userData.physicsBody = rBody;
             newCube.name = "cube";
            
+            convexBreaker.prepareBreakableObject( newCube, mass, new THREE.Vector3(), new THREE.Vector3(), true );
+			createDebrisFromBreakableObject( newCube );
+
             // set cube ID here? -> add to dict. mapping
             return newCube;
         }
+
+        function createDebrisFromBreakableObject( object ) {
+
+			object.castShadow = true;
+			object.receiveShadow = true;
+
+			const shape = createConvexHullPhysicsShape( object.geometry.attributes.position.array );
+			shape.setMargin( margin );
+
+			const body = createRigidBody( object, shape, object.userData.mass, null, null, object.userData.velocity, object.userData.angularVelocity );
+
+			// Set pointer back to the three object only in the debris objects
+			const btVecUserData = new Ammo.btVector3( 0, 0, 0 );
+			btVecUserData.threeObject = object;
+			body.setUserPointer( btVecUserData );
+
+		}
+
+        function removeDebris( object ) {
+
+			scene.remove( object );
+
+			physicsWorld.removeRigidBody( object.userData.physicsBody );
+
+		}
 
         function addBoxPhysics( scale , position, mass, quat, mesh) {
 
