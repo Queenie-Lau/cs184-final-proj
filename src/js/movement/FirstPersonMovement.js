@@ -14,7 +14,6 @@ let moveBackward = false;
 let moveLeft = false;
 let moveRight = false;
 let canJump = false;
-let isShooting = false;
 
 let prevTime = performance.now();
 const velocity = new Vector3();
@@ -89,11 +88,6 @@ class Movement extends EventDispatcher {
                     if ( canJump === true ) velocity.y += jumpHeight;
                     canJump = false;
                     break;
-
-                case 'KeyF':
-                    isShooting = true;
-                    initSphere();
-                    break;
             }
 
         };
@@ -120,10 +114,6 @@ class Movement extends EventDispatcher {
                 case 'ArrowRight':
                 case 'KeyD':
                     moveRight = false;
-                    break;
-
-                case 'Shoot':
-                    isShooting = false;
                     break;
             }
 

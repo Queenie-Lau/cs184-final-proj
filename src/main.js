@@ -4,12 +4,10 @@
 import * as THREE from './js/three.js';
 import { GLTFLoader } from './js/GLTFLoader.js';
 import { Movement } from './js/movement/FirstPersonMovement.js';
-//import { Ammo } from './js/ammo.js';
-//import * as AMMO from './js/ammo.js';
-
+import { SceneManager } from './js/SceneManager.js'
 
 var renderer, scene, camera, movement, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer, coinsGroup; 
-
+var sceneManager;
 var coinsGroup = new THREE.Group();
 //const raycaster = new THREE.Raycaster();
 //const pointer = new THREE.Vector2();
@@ -21,7 +19,6 @@ var platform = {width: 30, height: 30};
 clock = new THREE.Clock();
 
 var WIREFRAME = false;
-var spheresShot = [];
 
 var white = 0xffffff;
 var blue = 0x039dfc;
@@ -33,8 +30,8 @@ function main() {
 
 	//controls = new OrbitControls( camera, renderer.domElement );
 	//movement = new Movement( camera, renderer.domElement ); 
-	initMusic()
-	animate();
+	//initMusic()
+	//animate();
 }
 
 //Declaring projectile-related variables
@@ -50,9 +47,11 @@ function start(){
 	initPhysicsWorld();
 	initGraphicsWorld();
 
-	createGround();
-	createGridCubes();
-	createDropCube();
+	movement = new Movement( camera, renderer.domElement ); 
+	sceneManager = new SceneManager ( scene, physicsWorld, render.domElement );
+	rigidBody_List.push( sceneManager.createGround() );
+
+	//addSceneObjects();
 
 	addEventHandlers();
 
@@ -61,15 +60,12 @@ function start(){
 
 
 function initPhysicsWorld() {
-	let collisionConfiguration = new Ammo.btDefaultCollisonConfiguration(),
+	let collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
+	let dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
+	let overlappingPairCache = new Ammo.btDbvtBroadphase();
+	let solver = new Ammo.btSequentialImpulseConstraintSolver();
 
-		dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration),
-
-		overlappingPairCache = new Ammo.btDbvtBroadphase(),
-
-		solver = new Ammo.btSequentialImpulseConstraintSolver();
-
-	physicsWorld = new Ammo.btDiscreteDynamicWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
+	physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
 	physicsWorld.setGravity(new Ammo.btVector3(0, -10, 0));
 }
 
@@ -100,57 +96,7 @@ function initGraphicsWorld() {
 
 }
 
-function onMouseDown(event) {
-	mouseCoords.set((event.clientX / window.innerWidth) * 2 - 1, - (event.clientY / window.innerHeight) * 2 + 1);
-	raycaster.setFromCamera(mouseCoords, camera);
 
-	tmpPos.copy(raycaster.ray.direction);
-	tmpPos.add(raycaster.ray.origin);
-
-	let pos = {x:tmpPos.x, y:tmpPos.y, z:tmpPos.z};
-	let radius = 1;
-	let quat = {x:0, y:0, z:0, w:1};
-	let mass = 1;
-
-	let ball = new THREE.Mesh(
-		new THREE.SphereBufferGeometry(radius),
-		new THREE.MeshToonMaterial({emissive: white, emissiveIntensity:0.8})
-	);
-	ball.position.set(pos.x, pos.y, pos.z);
-	scene.add(ball);
-	
-	let transform = new Ammo.btTransform();
-	transform.setIdentity();
-
-	transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
-	transform.setRotation(new Ammo.btQuaternion( 0, 0, 0, 1));
-	let defaultMotionState = new Ammo.btDefaultMotionState(transform);
-
-	let structColShape = new Ammo.btBoxShape( new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
-	structColShape.setMargin(0.05);
-
-	let localIntertia = new Ammo.btVector3(0,0,0);
-	structColShape.calculateLocalInertia(mass, localIntertia);
-
-	let rbInfo = new Ammo.btRigidBodyConstructionInfo(
-		mass,
-		defaultMotionState,
-		structColShape,
-		localIntertia
-	);
-	let rBody = new Ammo.btRigidBody(rbInfo);
-	physicsWorld.addRigidBody( rBody);
-
-	tmpPos.copy(raycaster.ray.direction);
-	tmpPos.multiplyScalar(100);
-
-	body.setLinearVelocity(new Ammo.btVector3(tmpPos.x, tmpPos.y, tmpPos.z));
-
-	ball.userData.physicsBody = body;
-	rigidBody_List.push(ball);
-	
-
-}
 
 function render() {
 	let deltaTime = clock.getDelta();
@@ -247,7 +193,6 @@ function initIsland() {
 
 	scene.add( cube );
 }
-var bullets = [];
 
 // Instantiate player obstacles
 function initObjects() {
@@ -613,16 +558,6 @@ function animate() {
 	var delta = clock.getDelta();
 	if ( mixer ) mixer.update( delta );
 
-	var numSpheresToShoot = spheresShot.length;
-
-	for(var idx = 0; idx < 1; idx+=1){
-		if( spheresShot[idx] === undefined ) continue;
-		if( spheresShot[idx].alive == false ){
-			spheresShot.splice(idx, 1);
-			continue;
-		}
-		spheresShot[idx].position.add(spheresShot[idx].velocity);
-	}
 }
 
 // Instantiate a loader
@@ -690,6 +625,62 @@ function initFlower(x = 0, z = 0) {
 	});
 }
 
+
+
+/*  SHOOTING CONTROLS */
+
+function onMouseDown(event) {
+	mouseCoords.set((event.clientX / window.innerWidth) * 2 - 1, - (event.clientY / window.innerHeight) * 2 + 1);
+	raycaster.setFromCamera(mouseCoords, camera);
+
+	tmpPos.copy(raycaster.ray.direction);
+	tmpPos.add(raycaster.ray.origin);
+
+	let pos = {x:tmpPos.x, y:tmpPos.y, z:tmpPos.z};
+	let radius = 1;
+	let quat = {x:0, y:0, z:0, w:1};
+	let mass = 1;
+
+	let ball = new THREE.Mesh(
+		new THREE.SphereBufferGeometry(radius),
+		new THREE.MeshToonMaterial({emissive: white, emissiveIntensity:0.8})
+	);
+	ball.position.set(pos.x, pos.y, pos.z);
+	scene.add(ball);
+	
+	let transform = new Ammo.btTransform();
+	transform.setIdentity();
+
+	transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
+	transform.setRotation(new Ammo.btQuaternion( 0, 0, 0, 1));
+	let defaultMotionState = new Ammo.btDefaultMotionState(transform);
+
+	let structColShape = new Ammo.btBoxShape( new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
+	structColShape.setMargin(0.05);
+
+	let localIntertia = new Ammo.btVector3(0,0,0);
+	structColShape.calculateLocalInertia(mass, localIntertia);
+
+	let rbInfo = new Ammo.btRigidBodyConstructionInfo(
+		mass,
+		defaultMotionState,
+		structColShape,
+		localIntertia
+	);
+	let rBody = new Ammo.btRigidBody(rbInfo);
+	physicsWorld.addRigidBody( rBody);
+
+	tmpPos.copy(raycaster.ray.direction);
+	tmpPos.multiplyScalar(100);
+
+	body.setLinearVelocity(new Ammo.btVector3(tmpPos.x, tmpPos.y, tmpPos.z));
+
+	ball.userData.physicsBody = body;
+	rigidBody_List.push(ball);
+}
+
+
+
 export const addObjectClickListener = (
 	camera,
 	scene,
@@ -728,8 +719,9 @@ export const addObjectClickListener = (
 	);
   };
 
-function onMouseClick(event){
-	alert('Object has been shot at!');
+function addEventHandlers() {
+	window.addEventListener('mousedown', onMouseDown, false);
+	//window.addEventListener('resize', onWindowResize, false);
 }
 
 window.onload = main;
