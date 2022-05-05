@@ -56,6 +56,7 @@ let tmpTransformation = undefined;
 let raycaster = new THREE.Raycaster();
 let tmpPos = new THREE.Vector3();
 let mouseCoords = new THREE.Vector2();
+let rigidBody_List = new Array();
 
 Ammo().then(start)
 function startBulletTime(){
@@ -71,6 +72,84 @@ function startBulletTime(){
 	render();
 }
 
+function onMouseDown(event) {
+	mouseCoords.set((event.clientX / window.innerWidth) * 2 - 1, - (event.clientY / window.innerHeight) * 2 + 1);
+	raycaster.setFromCamera(mouseCoords, camera);
+
+	tmpPos.copy(raycaster.ray.direction);
+	tmpPos.add(raycaster.ray.origin);
+
+	let pos = {x:tmpPos.x, y:tmpPos.y, z:tmpPos.z};
+	let radius = 1;
+	let quat = {x:0, y:0, z:0, w:1};
+	let mass = 1;
+
+	let ball = new THREE.Mesh(
+		new THREE.SphereBufferGeometry(radius),
+		new THREE.MeshToonMaterial({emissive: white, emissiveIntensity:0.8})
+	);
+	ball.position.set(pos.x, pos.y, pos.z);
+	scene.add(ball);
+	
+	let transform = new Ammo.btTransform();
+	transform.setIdentity();
+
+	transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
+	transform.setRotation(new Ammo.btQuaternion( 0, 0, 0, 1));
+	let defaultMotionState = new Ammo.btDefaultMotionState(transform);
+
+	let structColShape = new Ammo.btBoxShape( new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
+	structColShape.setMargin(0.05);
+
+	let localIntertia = new Ammo.btVector3(0,0,0);
+	structColShape.calculateLocalInertia(mass, localIntertia);
+
+	let rbInfo = new Ammo.btRigidBodyConstructionInfo(
+		mass,
+		defaultMotionState,
+		structColShape,
+		localIntertia
+	);
+	let rBody = new Ammo.btRigidBody(rbInfo);
+	physicsWorld.addRigidBody( rBody);
+
+	tmpPos.copy(raycaster.ray.direction);
+	tmpPos.multiplyScalar(100);
+
+	body.setLinearVelocity(new Ammo.btVector3(tmpPos.x, tmpPos.y, tmpPos.z));
+
+	ball.userData.physicsBody = body;
+	rigidBody_List.push(ball);
+	
+
+}
+
+function render() {
+	let deltaTime = clock.getDelta();
+	updatephysicsWorld(deltaTime);
+	renderer.render(scene, camera);
+	requestAnimationFrame(render);
+}
+
+function updatephysicsWorld(deltaTime) {
+	physicsWorld.stepSimulation(deltaTime, 10);
+
+	for( let i = 0; i < rigidBody_List.length; i++) {
+		let Graphics_Obj = rigidBody_List[i];
+		let Physics_Obj = Graphics_Obj.userData.physicsBody;
+
+		let motionState = Physics_Obj.getMotionState();
+		if(motionState) {
+			motionState.getWorldTransform(tmpTransformation);
+			let new_pos = tmpTransformation.getOrigin();
+			let new_qua = tmpTransformation.getRotation();
+
+			Graphics_Obj.position.set(new_pos.x(), new_pos.y(), new_pos.z());
+			Graphics_Obj.quaternion.set(0, 0, 0, 1);
+		}
+	}
+}
+
 function initPhysicsWorld() {
 	let collisionConfiguration = new Ammo.btDefaultCollisonConfiguration(),
 
@@ -82,13 +161,6 @@ function initPhysicsWorld() {
 
 	physicsWorld = new Ammo.btDiscreteDynamicWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
 	physicsWorld.setGravity(new Ammo.btVector3(0, -10, 0));
-}
-
-function initGraphicsWorld(){
-	clock = new THREE.Clock();
-
-	
-
 }
 
 
@@ -165,6 +237,32 @@ function initSphere() {
 	sphere.receiveShadow = true;
 
 	let sphereBoundingBox = new THREE.Sphere(sphere.position, 1);
+
+	//AMMO related code
+	let transform = new Ammo.btTransform();
+	transform.setIdentity();
+
+	transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
+	transform.setRotation(new Ammo.btQuaternion( 0, 0, 0, 1));
+	let defaultMotionState = new Ammo.btDefaultMotionState(transform);
+
+	let structColShape = new Ammo.btBoxShape( new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
+	structColShape.setMargin(0.05);
+
+	let localIntertia = new Ammo.btVector3(0,0,0);
+	structColShape.calculateLocalInertia(mass, localIntertia);
+
+	let rbInfo = new Ammo.btRigidBodyConstructionInfo(
+		mass,
+		defaultMotionState,
+		structColShape,
+		localIntertia
+	);
+	let rBody = new Ammo.btRigidBody(rbInfo);
+	physicsWorld.addRigidBody( rBody);
+
+	newCube.userData.physicsBody = rBody;
+	rigidBody_List.push(newCube);
 }
 
 function initTetrahedron(x = 0, y = 0, z = 0) {
