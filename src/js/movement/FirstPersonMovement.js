@@ -135,11 +135,6 @@ class Movement extends EventDispatcher {
                 //const intersections = raycaster.intersectObjects( objects, false );
 
                 //const onObject = intersections.length > 0;
-
-                if (isShooting) {
-                    initSphere();
-                }
-
                 const delta = ( time - prevTime ) / 1000;
 
                 velocity.x -= velocity.x * speed * delta;

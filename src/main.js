@@ -51,7 +51,7 @@ function start(){
 	sceneManager = new SceneManager ( scene, physicsWorld, renderer.domElement );
 	rigidBody_List.push( sceneManager.createGround() );
 
-	//addSceneObjects();
+	addSceneObjects();
 
 	addEventHandlers();
 
@@ -103,6 +103,7 @@ function render() {
 	updatephysicsWorld(deltaTime);
 	renderer.render(scene, camera);
 	requestAnimationFrame(render);
+	movement.update();
 }
 
 function updatephysicsWorld(deltaTime) {
