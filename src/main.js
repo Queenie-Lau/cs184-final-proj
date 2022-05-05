@@ -189,9 +189,9 @@ function shootSphere(sphere) {
 		setTimeout(function(){
 			sphere.alive = false;
 			scene.remove(sphere);
-		}, 3000);
+		}, 1000);
 	
-	player.shootDelay = 30;
+	player.shootDelay = 100;
 }
 
 function initTetrahedron(x = 0, y = 0, z = 0) {
@@ -461,7 +461,9 @@ function animate() {
 	var delta = clock.getDelta();
 	if ( mixer ) mixer.update( delta );
 
-	for(var idx = 0; idx < spheresShot.length; idx+=1){
+	var numSpheresToShoot = spheresShot.length;
+
+	for(var idx = 0; idx < 1; idx+=1){
 		if( spheresShot[idx] === undefined ) continue;
 		if( spheresShot[idx].alive == false ){
 			spheresShot.splice(idx, 1);

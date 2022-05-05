@@ -124,7 +124,6 @@ class Movement extends EventDispatcher {
 
                 case 'Shoot':
                     isShooting = false;
-                    initSphere();
                     break;
             }
 
