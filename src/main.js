@@ -146,7 +146,7 @@ function addSceneObjects() {
 	texturizeFloor();
 	initFloor();
 	initIsland();
-	initPlayerGun();
+	//initPlayerGun();
 	initGoombaEnemies(-5, 0.1, 4);
 	initSkyBox();
 	scene.fog = new THREE.Fog(0xDFE9F3, -40, 100);
@@ -182,21 +182,7 @@ function initFloor() {
 	var position = new THREE.Vector3(0,0,0);
 	var mass = 0;
 	var quat = {x: -Math.PI / 2, y: 0, z: 0, w: 1};
-	//const floorGeometry = new THREE.PlaneGeometry(scale.x, scale.y, scale.z); 
-	//const floorMaterial = new THREE.MeshPhongMaterial( {color: white, wireframe: WIREFRAME} )
 	const floorMaterial = new THREE.MeshPhongMaterial({map : floorTexture})
-	//const meshFloor = new THREE.Mesh( floorGeometry, floorMaterial );
-
-	// const displacementMap = new THREE.TextureLoader().load(
-	// 	'assets/mario_assets/grass_displacement.jpg'
-	// )
-	// floorMaterial.displacementMap = displacementMap
-
-	//meshFloor.rotation.x = quat.x;
-	//meshFloor.receiveShadow = true;
-	//scene.add(meshFloor);
-
-
 	var scale = new THREE.Vector3(platform.width, 1,  platform.height);
 	var position = new THREE.Vector3(0,-0.5,0);
 	var mass = 0;
@@ -222,8 +208,6 @@ function initObjects() {
 	initTree(-13, -6, 2.5, 6);
    	initTree(5, 5, 1, 8);
    	initTree(3, 3);
-   	//initTree(-6, 8);
-   	//initTree(8, 8);
    	initTree(-6, 9, 1.5, 4, 7);
    	initTree(-7.5, -7.5, 2, 6, 7);
    	initTree(10, 1);
@@ -368,6 +352,12 @@ function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color
 	}
 
 
+	var position = new THREE.Vector3(x, y, z);
+	var scale = new THREE.Vector3(width, height, depth);
+	var mass = 0;
+	rigidBody_List.push( sceneManager.initCube(position, scale, mass, wallMaterial) );
+
+	/*
 	const cube = new THREE.Mesh( geometry, wallMaterial );
 	cube.position.set(x, y, z);
 	cube.receiveShadow = true;
@@ -379,7 +369,8 @@ function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color
 	//cube.name = id.regularBox;
 	scene.add( cube );
 
-	return cube;
+
+	return cube;*/
 }
 
 function initPowerUpBox(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1) {
@@ -496,8 +487,8 @@ function initPlayerGun() {
 		// resource URL
 		'assets/toy_gun/scene.gltf',
 		function ( gltf ) {
-			gltf.scene.scale.set(.5, .5, .5);
-			gltf.scene.position.set(camera.position.x - 20, camera.position.y - 10, camera.position.z - 13);
+			gltf.scene.scale.set(.05, .05, .05);
+			gltf.scene.position.set(camera.position.x , camera.position.y , camera.position.z);
 			
 			// camera.position.normalize();
 			// gltf.scene.position.set(normalizedPos.x, normalizedPos.y, normalizedPos.z);
@@ -508,7 +499,7 @@ function initPlayerGun() {
 					node.castShadow = true;
 				}
 			} );
-			gltf.scene.rotateX(-93);
+			gltf.scene.rotateX(23);
 			
 			const box = new THREE.Box3().setFromObject(gltf.scene);
 			const size = box.getSize(new THREE.Vector3()).length();
@@ -631,7 +622,7 @@ function onMouseDown(event) {
 
 	let ball = new THREE.Mesh(
 		new THREE.SphereBufferGeometry(radius),
-		new THREE.MeshToonMaterial({emissive: 0xff2bed, emissiveIntensity:0.8})
+		new THREE.MeshToonMaterial({emissive: 0x000000, emissiveIntensity:0.8})
 	);
 	ball.position.set(pos.x, pos.y, pos.z);
 	scene.add(ball);
