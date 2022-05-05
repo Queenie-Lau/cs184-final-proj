@@ -48,7 +48,7 @@ function start(){
 	initGraphicsWorld();
 
 	movement = new Movement( camera, renderer.domElement ); 
-	sceneManager = new SceneManager ( scene, physicsWorld, render.domElement );
+	sceneManager = new SceneManager ( scene, physicsWorld, renderer.domElement );
 	rigidBody_List.push( sceneManager.createGround() );
 
 	//addSceneObjects();
@@ -115,11 +115,15 @@ function updatephysicsWorld(deltaTime) {
 		let motionState = Physics_Obj.getMotionState();
 		if(motionState) {
 			motionState.getWorldTransform(tmpTransformation);
-			let new_pos = tmpTransformation.getOrigin();
-			let new_qua = tmpTransformation.getRotation();
+			console.log("HELLOO", tmpTransformation);
+			if (tmpTransformation) {
+				let new_pos = tmpTransformation.getOrigin();
+				let new_qua = tmpTransformation.getRotation();
 
-			Graphics_Obj.position.set(new_pos.x(), new_pos.y(), new_pos.z());
-			Graphics_Obj.quaternion.set(0, 0, 0, 1);
+				Graphics_Obj.position.set(new_pos.x(), new_pos.y(), new_pos.z());
+				Graphics_Obj.quaternion.set(new_qua.x, new_qua.y, new_qua.z, new_qua.w);
+	
+			}
 		}
 	}
 }
@@ -650,21 +654,20 @@ function onMouseDown(event) {
 	
 	let transform = new Ammo.btTransform();
 	transform.setIdentity();
+	transform.setOrigin(new Ammo.btVector3(pos.x, pos.y, pos.z));
+	transform.setRotation(new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w));
+	let motionState = new Ammo.btDefaultMotionState(transform);
 
-	transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
-	transform.setRotation(new Ammo.btQuaternion( 0, 0, 0, 1));
-	let defaultMotionState = new Ammo.btDefaultMotionState(transform);
-
-	let structColShape = new Ammo.btBoxShape( new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
-	structColShape.setMargin(0.05);
+	let colShape = new Ammo.btSphereShape( radius );
+	colShape.setMargin(0.05);
 
 	let localIntertia = new Ammo.btVector3(0,0,0);
-	structColShape.calculateLocalInertia(mass, localIntertia);
+	colShape.calculateLocalInertia(mass, localIntertia);
 
 	let rbInfo = new Ammo.btRigidBodyConstructionInfo(
 		mass,
-		defaultMotionState,
-		structColShape,
+		motionState,
+		colShape,
 		localIntertia
 	);
 	let rBody = new Ammo.btRigidBody(rbInfo);
@@ -673,9 +676,9 @@ function onMouseDown(event) {
 	tmpPos.copy(raycaster.ray.direction);
 	tmpPos.multiplyScalar(100);
 
-	body.setLinearVelocity(new Ammo.btVector3(tmpPos.x, tmpPos.y, tmpPos.z));
+	rBody.setLinearVelocity(new Ammo.btVector3(tmpPos.x, tmpPos.y, tmpPos.z));
 
-	ball.userData.physicsBody = body;
+	ball.userData.physicsBody = rBody;
 	rigidBody_List.push(ball);
 }
 

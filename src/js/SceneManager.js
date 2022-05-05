@@ -58,7 +58,7 @@ class SceneManager {
 
         // API FUNCTIONS
         this.createGround = function() {
-            createCube(
+            return createCube(
                 new THREE.Vector3(50, 2, 40),
                 new THREE.Vector3(15, -5, 30),
                 0, 
