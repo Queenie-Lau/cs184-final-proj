@@ -5,7 +5,6 @@ import {
 } from '../three.js';
 
 import { PointerLockControls } from './PointerLockControls.js';
-import { initSphere } from "/src/main.js";
 
 var controls; 
 
@@ -14,7 +13,6 @@ let moveBackward = false;
 let moveLeft = false;
 let moveRight = false;
 let canJump = false;
-let isShooting = false;
 
 let prevTime = performance.now();
 const velocity = new Vector3();
@@ -89,11 +87,6 @@ class Movement extends EventDispatcher {
                     if ( canJump === true ) velocity.y += jumpHeight;
                     canJump = false;
                     break;
-
-                case 'KeyF':
-                    isShooting = true;
-                    initSphere();
-                    break;
             }
 
         };
@@ -121,10 +114,6 @@ class Movement extends EventDispatcher {
                 case 'KeyD':
                     moveRight = false;
                     break;
-
-                case 'Shoot':
-                    isShooting = false;
-                    break;
             }
 
         };
@@ -145,11 +134,6 @@ class Movement extends EventDispatcher {
                 //const intersections = raycaster.intersectObjects( objects, false );
 
                 //const onObject = intersections.length > 0;
-
-                if (isShooting) {
-                    initSphere();
-                }
-
                 const delta = ( time - prevTime ) / 1000;
 
                 velocity.x -= velocity.x * speed * delta;
@@ -163,13 +147,6 @@ class Movement extends EventDispatcher {
 
                 if ( moveForward || moveBackward ) velocity.z -= direction.z * 400.0 * delta;
                 if ( moveLeft || moveRight ) velocity.x -= direction.x * 400.0 * delta;
-
-                //if ( onObject === true ) {
-
-                //    velocity.y = Math.max( 0, velocity.y );
-                //    canJump = true;
-
-                //}
 
                 controls.moveRight( - velocity.x * delta );
                 controls.moveForward( - velocity.z * delta );
