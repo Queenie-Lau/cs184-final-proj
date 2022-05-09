@@ -1,10 +1,12 @@
 import * as THREE from "./three.js";
+import { ConvexObjectBreaker } from "./objectBreaking/ConvexObjectBreaker.js";
+import { ConvexGeometry } from "./objectBreaking/ConvexGeometry.js";
+import { ConvexHull } from "./objectBreaking/ConvexHull.js";
 
 class SceneManager {
 
     rigidbody_List = [];
-
-	constructor(scene, physicsWorld, domElement ) {
+    	constructor(scene, physicsWorld, domElement ) {
 
 		if ( domElement === undefined ) {
 
@@ -17,9 +19,12 @@ class SceneManager {
         this.physicsWorld = physicsWorld;
 		this.domElement = domElement;
 
+        let transformAux1 = new Ammo.btTransform();
+        let tempBtVec3_1 = new Ammo.btVector3( 0, 0, 0 );
+
         const convexBreaker = new ConvexObjectBreaker();
 
-        /* Initialization and physics functions */
+            /* Initialization and physics functions */
 
         function createCube(scale, position, mass, material, quat) {
             var geometry = new THREE.BoxBufferGeometry(scale.x, scale.y, scale.z);
@@ -68,7 +73,7 @@ class SceneManager {
 			object.receiveShadow = true;
 
 			const shape = createConvexHullPhysicsShape( object.geometry.attributes.position.array );
-			shape.setMargin( margin );
+			shape.setMargin( 0.05 );
 
 			const body = createRigidBody( object, shape, object.userData.mass, null, null, object.userData.velocity, object.userData.angularVelocity );
 
@@ -79,11 +84,96 @@ class SceneManager {
 
 		}
 
+        function createRigidBody( object, physicsShape, mass, pos, quat, vel, angVel ) {
+
+			if ( pos ) {
+
+				object.position.copy( pos );
+
+			} else {
+
+				pos = object.position;
+
+			}
+
+			if ( quat ) {
+
+				object.quaternion.copy( quat );
+
+			} else {
+
+				quat = object.quaternion;
+
+			}
+
+			const transform = new Ammo.btTransform();
+			transform.setIdentity();
+			transform.setOrigin( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
+			transform.setRotation( new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w ) );
+			const motionState = new Ammo.btDefaultMotionState( transform );
+
+			const localInertia = new Ammo.btVector3( 0, 0, 0 );
+			physicsShape.calculateLocalInertia( mass, localInertia );
+
+			const rbInfo = new Ammo.btRigidBodyConstructionInfo( mass, motionState, physicsShape, localInertia );
+			const body = new Ammo.btRigidBody( rbInfo );
+
+			body.setFriction( 0.5 );
+
+			if ( vel ) {
+
+				body.setLinearVelocity( new Ammo.btVector3( vel.x, vel.y, vel.z ) );
+
+			}
+
+			if ( angVel ) {
+
+				body.setAngularVelocity( new Ammo.btVector3( angVel.x, angVel.y, angVel.z ) );
+
+			}
+
+			object.userData.physicsBody = body;
+			object.userData.collided = false;
+
+			scene.add( object );
+
+			if ( mass > 0 ) {
+
+				rigidBodies.push( object );
+
+				// Disable deactivation
+				body.setActivationState( 4 );
+
+			}
+
+			physicsWorld.addRigidBody( body );
+
+			return body;
+
+		}
+
+
         function removeDebris( object ) {
 
 			scene.remove( object );
 
 			physicsWorld.removeRigidBody( object.userData.physicsBody );
+
+		}
+
+        function createConvexHullPhysicsShape( coords ) {
+
+			const shape = new Ammo.btConvexHullShape();
+
+			for ( let i = 0, il = coords.length; i < il; i += 3 ) {
+
+				tempBtVec3_1.setValue( coords[ i ], coords[ i + 1 ], coords[ i + 2 ] );
+				const lastOne = ( i >= ( il - 3 ) );
+				shape.addPoint( tempBtVec3_1, lastOne );
+
+			}
+
+			return shape;
 
 		}
 

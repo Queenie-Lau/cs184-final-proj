@@ -1,8 +1,8 @@
 import {
 	BufferGeometry,
 	Float32BufferAttribute
-} from './three.js';
-import { ConvexHull } from '../math/ConvexHull.js';
+} from '../three.js';
+import { ConvexHull } from './ConvexHull.js';
 
 class ConvexGeometry extends BufferGeometry {
 

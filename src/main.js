@@ -5,8 +5,6 @@ import * as THREE from './js/three.js';
 import { GLTFLoader } from './js/GLTFLoader.js';
 import { Movement } from './js/movement/FirstPersonMovement.js';
 import { SceneManager } from './js/SceneManager.js'
-import { ConvexObjectBreaker } from './jsm/misc/ConvexObjectBreaker.js';
-import { ConvexGeometry } from './jsm/geometries/ConvexGeometry.js';
 
 var renderer, scene, camera, movement, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer, coinsGroup; 
 var sceneManager;
@@ -27,7 +25,7 @@ clock = new THREE.Clock();
 
 // Object breaking variables 
 const impactPoint = new THREE.Vector3();
-const convexBreaker = new ConvexObjectBreaker();
+//const convexBreaker = new ConvexObjectBreaker();
 const impactNormal = new THREE.Vector3();
 
 var WIREFRAME = false;
