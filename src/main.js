@@ -4,7 +4,7 @@
 import * as THREE from './js/three.js';
 import { GLTFLoader } from './js/GLTFLoader.js';
 import { Movement } from './js/movement/FirstPersonMovement.js';
-import { SceneManager } from './js/SceneManager.js'
+import { SceneManager } from './js/SceneManager.js';
 
 var renderer, scene, camera, movement, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer, coinsGroup; 
 var sceneManager;
@@ -17,8 +17,6 @@ var intersectedObject;
 //const raycaster = new THREE.Raycaster();
 //const pointer = new THREE.Vector2();
 
-var player = {height: 1.8, speed: 0.3, turnSpeed: Math.PI * 0.02};
-var platform = {width: 30, height: 30};
 //var velocity = new THREE.Vector3();
 
 clock = new THREE.Clock();
@@ -39,111 +37,42 @@ var gray = 0xa9a9a9;
 function main() {
 	
 
-	//controls = new OrbitControls( camera, renderer.domElement );
 	//movement = new Movement( camera, renderer.domElement ); 
-	//()
-	//animate();
 }
 
-//Declaring projectile-related variables
-let physicsWorld;
-let tmpTransformation = undefined;
-let raycaster = new THREE.Raycaster();
-let tmpPos = new THREE.Vector3();
-let mouseCoords = new THREE.Vector2();
-let rigidBody_List = new Array();
-
-Ammo().then(start)
-function start(){
-	initPhysicsWorld();
-	initGraphicsWorld();
-
-	movement = new Movement( camera, renderer.domElement ); 
-	tmpTransformation = new Ammo.btTransform();
-	sceneManager = new SceneManager ( scene, physicsWorld, renderer.domElement );
-	//rigidBody_List.push( sceneManager.createGround() );
-
-	addSceneObjects();
-
-	addEventHandlers();
-
-	//initMusic();
-	render();
+init();
+function init() {
+	let sceneManager = new SceneManager( );
 }
-
-
-function initPhysicsWorld() {
-	let collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
-	let dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
-	let overlappingPairCache = new Ammo.btDbvtBroadphase();
-	let solver = new Ammo.btSequentialImpulseConstraintSolver();
-
-	physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
-	physicsWorld.setGravity(new Ammo.btVector3(0, -10, 0));
-	initContactResultCallback();
-	initContactPairResultCallback();
-}
-
 
 // Init Scene, Camera, Lighting, Renderer
-function initGraphicsWorld() {
-	//Create and position the camera
-	camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 30000 );
-	camera.position.set(0, player.height, -5);
-	camera.lookAt(new THREE.Vector3(0,player.height,0));
 
-	scene = new THREE.Scene();
-	const raycaster = new THREE.Raycaster();
 
-	initLights();
+/*function animate() {
+		movement.update();
 
-	// Instantiate the renderer
-	renderer = new THREE.WebGLRenderer( { antialias: true } );
-	renderer.setSize( window.innerWidth, window.innerHeight );
+        coinsGroup.children.forEach(child => {
+            child.rotateZ(-0.1);
+        });
 
-	// Add Shadow Map 
-	renderer.shadowMap.enabled = true;
-	renderer.shadowMap.type = THREE.BasicShadowMap;
-	document.body.appendChild( renderer.domElement );
+        requestAnimationFrame(render);
+        var delta = clock.getDelta();
+        if ( mixer ) mixer.update( delta );
 
-	renderer.outputEncoding = THREE.sRGBEncoding;
 }
-
-function render() {
-	let deltaTime = clock.getDelta();
-	updatephysicsWorld(deltaTime);
-	renderer.render(scene, camera);
+function animate() {
+	requestAnimationFrame(animate);
 	movement.update();
 
 	coinsGroup.children.forEach(child => {
 		child.rotateZ(-0.1);
 	});
 
-	requestAnimationFrame(render);
+	renderer.render( scene, camera );
 	var delta = clock.getDelta();
 	if ( mixer ) mixer.update( delta );
-}
 
-function updatephysicsWorld(deltaTime) {
-	physicsWorld.stepSimulation(deltaTime, 10);
-
-	for( let i = 0; i < rigidBody_List.length; i++) {
-		let Graphics_Obj = rigidBody_List[i];
-		let Physics_Obj = Graphics_Obj.userData.physicsBody;
-		let motionState = Physics_Obj.getMotionState();
-
-		if(motionState) {
-			motionState.getWorldTransform(tmpTransformation);
-			let new_pos = tmpTransformation.getOrigin();
-			let new_qua = tmpTransformation.getRotation();
-			//console.log(new_pos.x(), new_pos.y(), new_pos.z());
-			Graphics_Obj.position.set(new_pos.x(), new_pos.y(), new_pos.z());
-
-			//Graphics_Obj.quaternion.set(new_qua.x, new_qua.y, new_qua.z, new_qua.w);
-		}
-	}
-	checkForCollisions();
-}
+}*/
 
 
 // Instantiates all scene primitives
@@ -243,6 +172,11 @@ function initObjects() {
 	initCoin(1.6, 4, 10, .3, .3, .1, 32, 1, false);
 	initCoin(1, 4, 10, .3, .3, .1, 32, 1, false);
 	initCoin(.4, 4, 10, .3, .3, .1, 32, 1, false);
+	initCoin(.7, -4, 10, .3, .3, .1, 32, 1, false);
+
+	initCoin(1.6, 4, -3, .3, .3, .1, 32, 1, false);
+	initCoin(1, 4, -3, .3, .3, .1, 32, 1, false);
+	initCoin(.4, 4, -3, .3, .3, .1, 32, 1, false);
 
 	initCylinderPipes(-8, 0, 5);
 	initCylinderPipes(1, 1, 10, 1, 1, 3, 32, 1, false);
@@ -447,16 +381,9 @@ function initTree(x = 0, z = 0, width = 1.5, height = 4, scale = 5) {
 
 // Instantiate scene lights
 function initLights() {
-	const ambientLight = new THREE.AmbientLight(white, 0.5);
-	const pointLight = new THREE.PointLight(white, 0.8, 18);
+	//const ambientLight = new THREE.AmbientLight(white, 0.01);
 	
-	pointLight.position.set(-3, 6, -3);
-	pointLight.castShadow = true;
-	pointLight.shadow.camera.near = 0.1;
-	pointLight.shadow.camera.far = 25;
-
-	scene.add(pointLight);
-	scene.add(ambientLight);
+	//scene.add(ambientLight);
 }
 
 // Instantiate boundaries
@@ -670,19 +597,7 @@ function removeIntersectedCoinAnimation() {
 	coinsGroup.remove(intersectedObject);
 }
 
-function animate() {
-	requestAnimationFrame(animate);
-	movement.update();
 
-	coinsGroup.children.forEach(child => {
-		child.rotateZ(-0.1);
-	});
-
-	renderer.render( scene, camera );
-	var delta = clock.getDelta();
-	if ( mixer ) mixer.update( delta );
-
-}
 
 // Instantiate a loader
 const loader = new GLTFLoader();
