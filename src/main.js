@@ -4,7 +4,6 @@ import { Movement } from "./js/movement/FirstPersonMovement.js"
 import { GLTFLoader } from './js/GLTFLoader.js';
 
 // Graphics variables
-let textureLoader = new THREE.TextureLoader();
 let camera, movement, scene, renderer, mixer, loader, intersectedObject;
 const clock = new THREE.Clock();
 const mouseCoords = new THREE.Vector2();
