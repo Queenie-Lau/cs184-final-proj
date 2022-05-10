@@ -76,21 +76,7 @@ function animate() {
 
 
 // Instantiates all scene primitives
-function addSceneObjects() {
-	initBoundaries();
-	initObjects();
-	texturizeFloor();
-	initFloor();
-	initIsland();
-	//initPlayerGun();
-	initGoombaEnemies(-5, 0.1, 4);
-	initSkyBox();
-	scene.fog = new THREE.Fog(0xDFE9F3, -40, 100);
-	scene.background = new THREE.Color("rgb(135, 206, 235)");
-	scene.add( coinsGroup );
-	// updateCounter(2, 2, "goomba"); // testing
-	// updateCounter(3, 4, "coin");
-}
+
 
 function initMusic() {
 	// create an AudioListener and add it to the camera
@@ -122,7 +108,8 @@ function initFloor() {
 	var scale = new THREE.Vector3(platform.width, 1,  platform.height);
 	var position = new THREE.Vector3(0,-0.5,0);
 	var quat = {x: 0, y: 0, z: 0, w: 1};	
-	rigidBody_List.push(sceneManager.initCube(position, scale, mass, floorMaterial, quat));
+	//.push(sceneManager.initCube(position, scale, mass, floorMaterial, quat));
+	createObject
 }
 
 function initIsland() {

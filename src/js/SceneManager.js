@@ -49,8 +49,6 @@ var blue = 0x039dfc;
 var brown = 0x964B00;
 var gray = 0xa9a9a9;
 
-let canShoot = false;
-
 /* SETUP */ 
 
 Ammo().then(start);
@@ -317,58 +315,120 @@ function removeDebris( object ) {
 
 
 
-    
 function initObjects() {
+	/*initBoundaries();
+	initObjects();
+	texturizeFloor();
+	initFloor();
+	initIsland();
+	initGoombaEnemies(-5, 0.1, 4);
+	initSkyBox();
+		scene.add( coinsGroup );
+	// updateCounter(2, 2, "goomba"); // testing
+	// updateCounter(3, 4, "coin");
+    */
+    initFloor();
+    initSkyBox();
+    initIsland();
+    initBricks(2, 0.5, 2, 0.5, 0.5, 0.5);
+    initBricks(-1, 1, -1, 1, 1, 1, white, false);
 
-    // Ground
-    pos.set( 0, - 0.5, 0 );
-    quat.set( 0, 0, 0, 1 );
-    const ground = createParalellepipedWithPhysics( 40, 1, 40, 0, pos, quat, new THREE.MeshPhongMaterial( { color: 0xFFFFFF } ) );
-    ground.receiveShadow = true;
-
-    // Tower 1
-    const towerMass = 1000;
-    const towerHalfExtents = new THREE.Vector3( 2, 5, 2 );
-    pos.set( - 8, 5, 0 );
-    quat.set( 0, 0, 0, 1 );
-    createObject( towerMass, towerHalfExtents, pos, quat, createMaterial( 0xB03014 ) );
-
-    // Tower 2
-    pos.set( 8, 5, 0 );
-    quat.set( 0, 0, 0, 1 );
-    createObject( towerMass, towerHalfExtents, pos, quat, createMaterial( 0xB03214 ) );
-
-    //Bridge
-    const bridgeMass = 100;
-    const bridgeHalfExtents = new THREE.Vector3( 7, 0.2, 1.5 );
-    pos.set( 0, 10.2, 0 );
-    quat.set( 0, 0, 0, 1 );
-    createObject( bridgeMass, bridgeHalfExtents, pos, quat, createMaterial( 0xB3B865 ) );
-
-    // Stones
-    const stoneMass = 120;
-    const stoneHalfExtents = new THREE.Vector3( 1, 2, 0.15 );
-    const numStones = 8;
-    quat.set( 0, 0, 0, 1 );
-    for ( let i = 0; i < numStones; i ++ ) {
-
-        pos.set( 0, 2, 15 * ( 0.5 - i / ( numStones + 1 ) ) );
-
-        createObject( stoneMass, stoneHalfExtents, pos, quat, createMaterial( 0xB0B0B0 ) );
-
-    }
+    scene.fog = new THREE.Fog(0xDFE9F3, -40, 100);
+    scene.background = new THREE.Color("rgb(135, 206, 235)");
 }
 
-function createParalellepipedWithPhysics( sx, sy, sz, mass, pos, quat, material ) {
+function initFloor() {
+    const floorTexture = new THREE.TextureLoader().load( "assets/mario_assets/grass_a1.png" );
+	floorTexture.wrapS = THREE.RepeatWrapping;
+	floorTexture.wrapT = THREE.RepeatWrapping;
+	floorTexture.repeat.set( 4, 4 );
+	const floorMaterial = new THREE.MeshPhongMaterial({map : floorTexture})
 
+    pos.set( 0, -0.5, 0);
+    quat.set( 0, 0, 0, 1 );
+    const ground = createParalellepipedWithPhysics( platform.width, 1, platform.height, 0, pos, quat, floorMaterial );
+    ground.receiveShadow = true;
+
+    scene.add(ground);
+}
+
+function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color, breakable = true) {
+	const pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/brick.png" );
+	pipeTexture.wrapS = THREE.RepeatWrapping;
+	pipeTexture.wrapT = THREE.RepeatWrapping;
+	var wallMaterial = new THREE.MeshPhongMaterial({map : pipeTexture})
+	if (color == white) {
+		wallMaterial = new THREE.MeshPhongMaterial( { color: white } );
+	}
+
+    if (!breakable) {
+        initBricksWithPhysics(x, y, z, width, height, depth, wallMaterial, 3);
+    } else {
+        initBreakableBricks(x, y, z, width, height, depth, wallMaterial, 1000);
+    }
+ 
+}
+
+function initBricksWithPhysics(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, material, mass=3) {
+	pos.set( x, y, z);
+    quat.set(0, 0, 0, 1);
+    const block = createParalellepipedWithPhysics( width, height, depth, mass, pos, quat, material );
+    block.receiveShadow = true;
+    scene.add(block);
+}
+
+function initBreakableBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, material, mass=1000) {
+    pos.set( x, y, z);
+    quat.set(0, 0, 0, 1);
+    const scale = new THREE.Vector3( width, height, depth);
+    createObject(mass, scale, pos, quat, material);
+} 
+
+function initSkyBox() {
+	const materialTextures = [];
+	const front = new THREE.TextureLoader().load("assets/mario_assets/water.png");
+	const back = new THREE.TextureLoader().load("assets/mario_assets/sky_no_sun.png");
+	const up = new THREE.TextureLoader().load("assets/mario_assets/sky_top.png");
+	const down = new THREE.TextureLoader().load("assets/mario_assets/water_bottom.png");
+	const right = new THREE.TextureLoader().load("assets/mario_assets/sky_no_sun.png");
+	const left = new THREE.TextureLoader().load("assets/mario_assets/sky_no_sun.png");
+
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: front }));
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: back }));
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: up }));
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: down }));
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: right }));
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: left }));
+
+	for (let i = 0; i < 6; i++) {
+		materialTextures[i].side = THREE.BackSide;
+	}
+
+	var skyboxGeo = new THREE.BoxGeometry(100, 100, 100);
+	var skybox = new THREE.Mesh(skyboxGeo, materialTextures);
+	scene.add(skybox);
+}
+function initIsland() {
+	const geometry = new THREE.BoxGeometry( platform.width, 10, platform.height );
+	const islandTexture = new THREE.TextureLoader().load( "assets/mario_assets/island_side.png" );
+	islandTexture.wrapS = THREE.RepeatWrapping;
+	islandTexture.wrapT = THREE.RepeatWrapping;
+
+	const wallMaterial = new THREE.MeshPhongMaterial({map : islandTexture})
+	const cube = new THREE.Mesh( geometry, wallMaterial );
+	cube.position.set(0, -5.2, 0);
+
+	scene.add( cube );	
+}
+
+
+    
+function createParalellepipedWithPhysics( sx, sy, sz, mass, pos, quat, material ) {
     const object = new THREE.Mesh( new THREE.BoxGeometry( sx, sy, sz, 1, 1, 1 ), material );
     const shape = new Ammo.btBoxShape( new Ammo.btVector3( sx * 0.5, sy * 0.5, sz * 0.5 ) );
     shape.setMargin( margin );
-
     createRigidBody( object, shape, mass, pos, quat );
-
     return object;
-
 }
 
 function createObject( mass, scale, pos, quat, material ) {
@@ -388,78 +448,9 @@ function createConvexHullPhysicsShape( coords ) {
     }
     return shape;
 }
-/*static createCube(scale, position, mass, material, quat) {
-    var geometry = new THREE.BoxBufferGeometry(scale.x, scale.y, scale.z);
-    //var material = new THREE.MeshPhongMaterial({color: color});
-    var newCube = new THREE.Mesh( geometry, material );
-    newCube.position.set(position.x, position.y, position.z);
-
-    newCube.userData.tag = "cube"; // not setting correctly..?
-    scene.add(newCube);
-
-    let transform = new Ammo.btTransform();
-    transform.setIdentity();
-
-    transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
-    transform.setRotation(new Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w));
-    let defaultMotionState = new Ammo.btDefaultMotionState( transform );
-
-    let structColShape = new Ammo.btBoxShape( new Ammo.btVector3(scale.x*0.5, scale.y*0.5, scale.z*0.5))
-    structColShape.setMargin( margin );
-
-    let localInertia = new Ammo.btVector3(0,0,0);
-    structColShape.calculateLocalInertia(mass, localInertia)
-
-    let rbInfo = new Ammo.btRigidBodyConstructionInfo(
-        mass, 
-        defaultMotionState,
-        structColShape,
-        localInertia
-    );
-
-    let rBody = new Ammo.btRigidBody( rbInfo );
-    physicsWorld.addRigidBody( rBody );
-    newCube.userData.physicsBody = rBody;
-    newCube.name = "cube";
-    
-    convexBreaker.prepareBreakableObject( newCube, mass, new THREE.Vector3(), new THREE.Vector3(), true );
-    createDebrisFromBreakableObject( newCube );
-
-    // set cube ID here? -> add to dict. mapping
-    return newCube;
-}*/
 
 
-/*static addBoxPhysics( scale , position, mass, quat, mesh) {
 
-let transform = new Ammo.btTransform();
-transform.setIdentity();
-
-transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
-transform.setRotation(new Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w));
-let defaultMotionState = new Ammo.btDefaultMotionState( transform );
-
-let structColShape = new Ammo.btBoxShape( new Ammo.btVector3(scale.x*0.5, scale.y*0.5, scale.z*0.5))
-structColShape.setMargin( margin );
-
-let localInertia = new Ammo.btVector3(0,0,0);
-structColShape.calculateLocalInertia(mass, localInertia)
-
-let rbInfo = new Ammo.btRigidBodyConstructionInfo(
-    mass, 
-    defaultMotionState,
-    structColShape,
-    localInertia
-);
-
-let rBody = new Ammo.btRigidBody( rbInfo );
-physicsWorld.addRigidBody( rBody );
-
-mesh.userData.physicsBody = rBody;
-mesh.userData.tag = "cube"; // not setting correctly..?
-mesh.name = "cube";
-return mesh;
-}*/
 
 /* MATERIALS */
 
@@ -472,8 +463,10 @@ function createMaterial( color ) {
     return new THREE.MeshPhongMaterial( { color: color } );
 }
 
-/* INPUT */
 
+
+
+/* INPUT */
 function initInput() {
 
     window.addEventListener( 'pointerdown', function ( event ) {
@@ -512,3 +505,6 @@ function onWindowResize() {
     camera.updateProjectionMatrix();
     renderer.setSize( window.innerWidth, window.innerHeight );
 }
+
+
+/* EXPORTS */
