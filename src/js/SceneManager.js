@@ -6,7 +6,7 @@ import { GLTFLoader } from './GLTFLoader.js';
 
 // Graphics variables
 let textureLoader = new THREE.TextureLoader();
-let camera, movement, scene, renderer, mixer;
+let camera, movement, scene, renderer, mixer, loader, intersectedObject;
 const clock = new THREE.Clock();
 const mouseCoords = new THREE.Vector2();
 const raycaster = new THREE.Raycaster();
@@ -35,6 +35,7 @@ const objectsToRemove = [];
 var POWERUP = "powerUp";
 var BRICK = "brick";
 var PLACEHOLDER = "NO-NAME";
+var BALL = "BALL";
 
 for ( let i = 0; i < 500; i ++ ) {
     objectsToRemove[ i ] = null;
@@ -77,13 +78,10 @@ function init() {
 function initPhysicsWorld() {
     collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
     dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
-    //overlappingPairCache = new Ammo.btDbvtBroadphase();
     broadphase = new Ammo.btDbvtBroadphase();
     solver = new Ammo.btSequentialImpulseConstraintSolver();
     physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
     physicsWorld.setGravity(new Ammo.btVector3(0, -gravityConstant, 0));
-    //initContactResultCallback();
-    //initContactPairResultCallback();
 
     transformAux1 = new Ammo.btTransform();
     tempBtVec3_1 = new Ammo.btVector3( 0, 0, 0 );
@@ -306,6 +304,8 @@ function createRigidBody( object, physicsShape, mass, pos, quat, vel, angVel ) {
     }
 
     physicsWorld.addRigidBody( body );
+
+    body.threeObject = object;
     return body;
 }
 
@@ -376,7 +376,25 @@ function initObjects() {
 
     initCylinderPipes(-8, 0, 5);
     initCylinderPipes(1, 1, 10, 1, 1, 3, 32, 1, false);
+
+    initFlower(6, 6);
+ 	initFlower(-13, 1);
+
+     initTree(-13, -6, 2.5, 6);
+     initTree(5, 5, 1, 8);
+     initTree(3, 3);
+     initTree(-6, 9, 1.5, 4, 7);
+     initTree(-7.5, -7.5, 2, 6, 7);
+     initTree(10, 1);
+     initTree(14, 14);
+     initTree(10, -10);
+
+    initCapsuleTree(.5, .5, -9, 0.4, 1);
+    initCapsuleTree(1, 1, 7, 0.4, 1);
+    initCapsuleTree(.1, .1, 30, 30, 30);
 }
+
+
 
 function initFloor() {
     const floorTexture = new THREE.TextureLoader().load( "assets/mario_assets/grass_a1.png" );
@@ -457,6 +475,7 @@ function initCylinderPipes(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1,
 	scene.add( cylinder );
 	initTorusForPipe(x, y, z)
 }
+
 function initTorusForPipe(x = 0, y = 0, z = 0, radius = 1, tube = .2, radialSegments = 32, tubularSegments = 100) {
 	const geometry = new THREE.TorusGeometry( radius, tube, radialSegments, tubularSegments );
 	const material = new THREE.MeshPhongMaterial( { color: 0x2CB01A } );
@@ -467,6 +486,54 @@ function initTorusForPipe(x = 0, y = 0, z = 0, radius = 1, tube = .2, radialSegm
 	torus.rotateX(89.5);
 	//torus.name = id.pipe;
 	scene.add( torus );
+}
+function initCapsuleTree(radius = .1, length = .1, x = 0, y = 0, z = 0) {
+	const treeLeafTexture = new THREE.TextureLoader().load( "assets/mario_assets/tree_leaf.png" );
+	treeLeafTexture.wrapS = THREE.RepeatWrapping;
+	treeLeafTexture.wrapT = THREE.RepeatWrapping;
+	treeLeafTexture.repeat.set( 4, 4 );	
+
+	const leafGeometry = new THREE.CapsuleGeometry(radius, length, 32, 32);
+	const leafMaterial = new THREE.MeshPhongMaterial({ map: treeLeafTexture });
+	const treeLeaves = new THREE.Mesh(leafGeometry, leafMaterial);
+	treeLeaves.position.set(x, y, z);
+	treeLeaves.receiveShadow = true;
+	treeLeaves.castShadow = true;
+	//treeLeaves.name = id.tree;
+	scene.add(treeLeaves);
+}
+
+// Instantiates a tree at given coordinates and scale
+function initTree(x = 0, z = 0, width = 1.5, height = 4, scale = 5) {
+	var trunkRadius = width / scale; //Trunk should be 1/scale the width 
+	var trunkHeight = height / scale; // Trunk should be 1/scale the height
+
+	const treeBarkTexture = new THREE.TextureLoader().load( "assets/mario_assets/tree_xx01_Bark01_dif.png" );
+	treeBarkTexture.wrapS = THREE.RepeatWrapping;
+	treeBarkTexture.wrapT = THREE.RepeatWrapping;
+	treeBarkTexture.repeat.set( 4, 4 );	
+
+	const treeLeafTexture = new THREE.TextureLoader().load( "assets/mario_assets/tree_leaf.png" );
+	treeLeafTexture.wrapS = THREE.RepeatWrapping;
+	treeLeafTexture.wrapT = THREE.RepeatWrapping;
+	treeLeafTexture.repeat.set( 4, 4 );	
+
+	
+	const trunkGeometry = new THREE.CylinderGeometry( trunkRadius , trunkRadius, trunkHeight);
+	const trunkMaterial = new THREE.MeshPhongMaterial({ map: treeBarkTexture });
+	const treeTrunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+	treeTrunk.position.set(x, trunkHeight / 2, z);
+	treeTrunk.receiveShadow = true;
+	treeTrunk.castShadow = true;
+	const leafGeometry = new THREE.ConeGeometry(width, height);
+	const leafMaterial = new THREE.MeshPhongMaterial({ map: treeLeafTexture });
+	const treeLeaves = new THREE.Mesh(leafGeometry, leafMaterial);
+	treeLeaves.position.set(x, trunkHeight + height / 2, z);
+	treeLeaves.receiveShadow = true;
+	treeLeaves.castShadow = true;
+
+	scene.add(treeLeaves);
+	scene.add(treeTrunk);
 }
 
 function initSkyBox() {
@@ -554,7 +621,7 @@ function createConvexHullPhysicsShape( coords ) {
 }
 
 function initGoombaEnemies(x = 0, y = 0, z = 0) {
-    const loader = new GLTFLoader();
+    loader = new GLTFLoader();
 	loader.load(
 		// resource URL
 		'assets/animated_goomba/animated_goomba.gltf',
@@ -591,6 +658,23 @@ function initGoombaEnemies(x = 0, y = 0, z = 0) {
 	);
 }
 
+function initFlower(x = 0, z = 0) {
+	loader.load(
+		// resource URL
+		'assets/mario_bros_ice_flower/scene.gltf',
+		function ( gltf ) {
+			gltf.scene.scale.set(0.5, 0.5, 0.5); 
+			gltf.scene.position.set(x, 0.5, z);
+			gltf.scene.rotateY(60);
+			gltf.scene.traverse( function( node ) {
+				if ( node.isMesh ) {
+					node.castShadow = true;
+				}
+			} );		
+			scene.add( gltf.scene );
+	});
+}
+
 
 
 /* INPUT */
@@ -624,8 +708,21 @@ function initInput() {
             pos.copy( raycaster.ray.direction );
             pos.multiplyScalar( 24 );
             ballBody.setLinearVelocity( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
-        }
-    } );
+
+            var intersects = raycaster.intersectObjects( scene.children );
+            if (intersects.length > 0) {
+                intersectedObject = intersects[0].object;
+
+                if (intersectedObject.name == "coin") {
+                    updateCounter(coinCount, goombaCount, "coin");
+                } else if (intersectedObject.name == "goomba") {
+                    updateCounter(coinCount, goombaCount, "goomba");
+                }
+            }
+    }
+} );
+
+    
 }
 
 function onWindowResize() {
