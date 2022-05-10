@@ -32,6 +32,10 @@ let tempBtVec3_1;
 
 const objectsToRemove = [];
 
+var POWERUP = "powerUp";
+var BRICK = "brick";
+var PLACEHOLDER = "NO-NAME";
+
 for ( let i = 0; i < 500; i ++ ) {
     objectsToRemove[ i ] = null;
 }
@@ -144,6 +148,13 @@ function updatephysicsWorld(deltaTime) {
 
         if ( ! threeObject0 && ! threeObject1 ) {
             continue;
+        }
+        if (threeObject0 && threeObject0.name == POWERUP) {
+            console.log(threeObject0.name);
+        }
+        
+        if (threeObject1 && threeObject1.name == POWERUP) {
+            console.log(threeObject1.name);
         }
 
         const userData0 = threeObject0 ? threeObject0.userData : null;
@@ -327,23 +338,10 @@ function removeDebris( object ) {
 
 
 function initObjects() {
-	/*initBoundaries();
-	initObjects();
-	texturizeFloor();
-	initFloor();
-	initIsland();
-	initGoombaEnemies(-5, 0.1, 4);
-	initSkyBox();
-		scene.add( coinsGroup );
-	// updateCounter(2, 2, "goomba"); // testing
-	// updateCounter(3, 4, "coin");
-    */
     // Set up environment
     initFloor();
     initSkyBox();
     initIsland();
-    initBricks(2, 0.5, 2, 0.5, 0.5, 0.5);
-    initBricks(-1, 1, -1, 1, 1, 1, white, false);
 
     scene.fog = new THREE.Fog(0xDFE9F3, -40, 100);
     scene.background = new THREE.Color("rgb(135, 206, 235)");
@@ -363,6 +361,21 @@ function initObjects() {
     scene.add( coinsGroup );
 
     initGoombaEnemies(-5, 0.1, 4);
+
+    initBricks(3.6, 0.35, 10, .7, .7, .7, brown);
+   	initBricks(4.4, 0.35, 10, .7, .7, .7, brown);
+   	initBricks(5.2, 0.35, 10, .7, .7, .7, brown);
+   	initBricks(6, 0.35, -4, .7, .7, .7, brown);
+   	initBricks(4, 0.35, -10, .7, .7, .7, brown);
+   	initBricks(-4, 0.35, 0, .7, .7, .7, brown);
+
+    initPowerUpBox(14, 3, 5, .7, .7, .7);
+   	initPowerUpBox(10, 3, 5, .7, .7, .7);
+   	initPowerUpBox(-14, 3, 5, .7, .7, .7);
+   	initPowerUpBox(3, 4, 10, .7, .7, .7);
+
+    initCylinderPipes(-8, 0, 5);
+    initCylinderPipes(1, 1, 10, 1, 1, 3, 32, 1, false);
 }
 
 function initFloor() {
@@ -380,6 +393,16 @@ function initFloor() {
     scene.add(ground);
 }
 
+
+function initPowerUpBox(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1) {
+	const pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/question_box.png" );
+	pipeTexture.wrapS = THREE.RepeatWrapping;
+	pipeTexture.wrapT = THREE.RepeatWrapping;
+	const wallMaterial = new THREE.MeshPhongMaterial({map : pipeTexture})
+
+    initBlockWithPhysics(x, y, z, width, height, depth, wallMaterial, POWERUP, 0);
+}
+
 function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color, breakable = true) {
 	const pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/brick.png" );
 	pipeTexture.wrapS = THREE.RepeatWrapping;
@@ -390,27 +413,61 @@ function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color
 	}
 
     if (!breakable) {
-        initBricksWithPhysics(x, y, z, width, height, depth, wallMaterial, 3);
+        initBlockWithPhysics(x, y, z, width, height, depth, wallMaterial, BRICK, 3);
     } else {
-        initBreakableBricks(x, y, z, width, height, depth, wallMaterial, 1000);
+        initBreakableBlock(x, y, z, width, height, depth, wallMaterial, BRICK, 1000);
     }
  
 }
 
-function initBricksWithPhysics(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, material, mass=3) {
+function initBlockWithPhysics(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, material, name=PLACEHOLDER, mass = 0) {
 	pos.set( x, y, z);
     quat.set(0, 0, 0, 1);
-    const block = createParalellepipedWithPhysics( width, height, depth, mass, pos, quat, material );
+    const block = createParalellepipedWithPhysics( width, height, depth, mass, pos, quat, material, name);
     block.receiveShadow = true;
     scene.add(block);
 }
 
-function initBreakableBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, material, mass=1000) {
+function initBreakableBlock(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, material, name=PLACEHOLDER, mass=1000) {
     pos.set( x, y, z);
     quat.set(0, 0, 0, 1);
-    const scale = new THREE.Vector3( width, height, depth);
-    createObject(mass, scale, pos, quat, material);
+    const scale = new THREE.Vector3( width / 2, height / 2, depth / 2);
+    createObject(mass, scale, pos, quat, material, BRICK);
 } 
+
+function initCylinderPipes(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height = 3, radialSegments = 32, heightSegments = 1, openEnded = false) {
+	const geometry =  new THREE.CylinderGeometry( radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded )
+
+	const pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/pipe.png" );
+	pipeTexture.wrapS = THREE.RepeatWrapping;
+	pipeTexture.wrapT = THREE.RepeatWrapping;
+	pipeTexture.repeat.set( 4, 4 );	
+
+	const pipeMaterial = new THREE.MeshPhongMaterial( {map : pipeTexture} );
+	const pipeColor =  new THREE.MeshPhongMaterial({color: 0x2CB01A, wireframe: false});
+	const cylinder = new THREE.Mesh( geometry, pipeColor );
+	cylinder.position.set(x, y, z);
+	cylinder.castShadow = true;
+	cylinder.receiveShadow = true;
+
+	let cylinderBoundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+	cylinderBoundingBox.setFromObject(cylinder);
+
+	//cylinder.name = id.pipe;
+	scene.add( cylinder );
+	initTorusForPipe(x, y, z)
+}
+function initTorusForPipe(x = 0, y = 0, z = 0, radius = 1, tube = .2, radialSegments = 32, tubularSegments = 100) {
+	const geometry = new THREE.TorusGeometry( radius, tube, radialSegments, tubularSegments );
+	const material = new THREE.MeshPhongMaterial( { color: 0x2CB01A } );
+	const torus = new THREE.Mesh( geometry, material );
+	torus.position.set(x, y + 1.5, z);
+	torus.castShadow = true;
+	torus.receiveShadow = true;
+	torus.rotateX(89.5);
+	//torus.name = id.pipe;
+	scene.add( torus );
+}
 
 function initSkyBox() {
 	const materialTextures = [];
@@ -468,16 +525,18 @@ function initCoin(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height =
 	coinsGroup.add(cylinder);
 }
     
-function createParalellepipedWithPhysics( sx, sy, sz, mass, pos, quat, material ) {
+function createParalellepipedWithPhysics( sx, sy, sz, mass, pos, quat, material, name=PLACEHOLDER) {
     const object = new THREE.Mesh( new THREE.BoxGeometry( sx, sy, sz, 1, 1, 1 ), material );
     const shape = new Ammo.btBoxShape( new Ammo.btVector3( sx * 0.5, sy * 0.5, sz * 0.5 ) );
+    object.name = name;
     shape.setMargin( margin );
     createRigidBody( object, shape, mass, pos, quat );
     return object;
 }
 
-function createObject( mass, scale, pos, quat, material ) {
+function createObject( mass, scale, pos, quat, material, name=PLACEHOLDER) {
     const object = new THREE.Mesh( new THREE.BoxGeometry( scale.x * 2, scale.y * 2, scale.z * 2), material );
+    object.name = name;
     object.position.copy( pos );
     object.quaternion.copy( quat );
     convexBreaker.prepareBreakableObject( object, mass, new THREE.Vector3(), new THREE.Vector3(), true );
@@ -550,7 +609,7 @@ function initInput() {
 
             // Creates a ball and throws it
             const ballMass = 35;
-            const ballRadius = 0.4;
+            const ballRadius = 0.3;
 
             const ball = new THREE.Mesh( new THREE.SphereGeometry( ballRadius, 14, 10 ), ballMaterial );
             ball.castShadow = true;
