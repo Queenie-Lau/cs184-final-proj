@@ -58,6 +58,10 @@ class Movement extends EventDispatcher {
             instructions.style.display = '';
         } );    
 
+        this.isLocked = function() {
+            return controls.isLocked;
+        }
+
         // Input Functions
         function onKeyDown( event ) {
 
