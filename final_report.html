@@ -1,0 +1,149 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd%22%3E
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184 Final Project</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans%7CSource+Sans+Pro" rel="stylesheet">
+</head>
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2022</h1>
+<h1 align="middle">Final Project: First Person Shooter Game</h1>
+<h2 align="middle">Neel Choudhary, Dakshina Palasamudrum, Queenie Lau, Justin Radatti, Queenie-Lau/CS184-final-proj</h2>
+<h2 align="middle">https://github.com/Queenie-Lau/cs184-final-proj</h2>
+<br><br>
+
+<div>
+
+<h2 align="middle">Abstract</h2>
+
+<p>Our final project, Super Mario Brothers 1st POV shooter, is  a First Point of View interactive, 360 degree game render based on the popular video game Super Mario Brothers. Utilizing three.js and WebGL, we created a 360 degree game that allows the player (the camera) to move around with arrow keys, shoot at enemies, bricks, boxes, and coins, and see the amount of coins they have collected.<p>
+
+<h2 align="middle">Technical Approach</h2>
+
+  <p>We first initialized the graphics world for our game which included setting up the camera, scene, lighting, renderer, and our orbit controls for player movement.  Then, we initialized our scene objects in the graphics world which included the coins, goomba enemies, trees, and flowers. Lastly, we initialized the physics world which included initializing the physics for objects using rigid bodies and implementing object detection using two techniques: raycasting and the Ammo.js dispatcher.<p>
+
+    <p>To implement first person movement and support 360 degree viewing, we implemented first person movement similar to most FPS (first person shooter) games, using the WASD keys as well as the spacebar to jump. For looking around, we utilized <strong>pointerLockControls<strong> and <strong>OrbitControls<strong> to get the player looking where the mouse is pointed. The player is the camera and we rotated the camera according to where the mouse is pointing.<p>
+
+      <p>To implement the shooting functionality, we initialized the aforementioned physics world to store data related to the ray-tracing and physical properties of each bullet. Then, we Initialized a <strong>MouseDown<strong> function that recognizes the event in which a player clicks the mouse button. Next, on each mouse click, we instantiate a ball and give it a rigid body. Lastly, we shoot a ray into the scene where the mouse is pointing to get the direction where we want to shoot out the sphere.<p>
+
+        <p>To implement collision detection, we implemented two types of collision detection. One way is using the Ammo javascript framework to calculate when an object collides. This algorithm works by iterating through all of the scene objects and calculating the distance between them, using a cache to speed up the process. More specifically, we first calculated the number of contact manifolds (cache of contact points between pairs of collision objects). Then, we iterated through the cache to get individual contact manifolds. Next, we iterated through each contact manifold to get the contact point (intersection point between two objects). Lastly, we calculated the distance between two contact points. For the raycasting approach within the Three.js framework, we send a ray into the scene in the direction the camera is pointing, <strong>raycaster.setFromCamera(mouseCoords, camera)<strong>. Then, we iterate through all of the objects that it hit, picking any relevant objects. We can tell if an object is colliding based on distance from the camera.<p>
+
+<h2 align="middle">Problems Encountered</h2>
+
+<p>One of the earliest challenges we encountered was getting acquainted with the Javascript language and the Three.js framework. To combat this issue, we thoroughly read up on documentation, watched tutorials, and reviewed core class concepts so that we would have an easier time understanding the syntax of Three.js.<p>
+
+  <p>One of the earliest problems included setting up the scene to incorporate the physics world. Though we had initialized the graphics world with bricks, power up boxes, coins, and other objects, we were unable to figure out how to tackle the physics of these 3D objects. To solve this problem, we had to refactor our code to create a physics world that would then initialize our scene objects from the graphics world. <p>
+  <p>Another problem we encountered was figuring out how to shoot the spheres out and have them hit our objects. To solve this, we implemented the physics for the spheres so that we were able to control their masses and velocities. Then, we implemented object detection using ray tracing and the Ammo.js approach so that we would know what exactly has been hit. Then, we implemented object detection so that we can appropriately calculate how the sphere’s mass and velocity will affect the appropriate object. </p>
+
+<h2 align="middle">Lessons Learned</h2>
+
+  <p>The biggest lessons we’ve learned from this project is that we need to work in an organized, communicative manner. By communicating effectively and coordinating how each piece of the project will fit together, we learned that this was the best way to approach the project and prevent interdependencies before diving straight into coding the project. Another lesson we’ve learned is to not to underestimate the difficulty and scale of trying to create a game from scratch. After pivoting from our initial idea to utilize Unity3D, we learnt that building a game from nothing is incredibly ambitious and impossible without extreme planning and coordination.<p>
+
+    <p>On a technical level, we’ve learned to not only resolve Github merge conflicts but also how to utilize concepts from class such as Blinn-Phong shading, texture shading, point and ambient lighting, animation, object detection, and object detection to build a 3D game. Moreover, all of us had no prior experience working with the Three.js framework and with Javascript in general. We learnt that it was vital to research thoroughly on documentation, video tutorials, and external forums to build our foundational knowledge of the framework. Then, with this knowledge, we were able to expand this to work with other Javascript frameworks. <p>
+
+      <h2 align="middle">Results:</h2>
+
+      <h3 align="middle">Preliminary State</h3>
+
+      <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="left">
+                    <img src="./prel1.png" width="480px" />
+                    <td align="middle">
+                    <img src="./prel2.png" width="480px" />
+                    <td align="right">
+                    <img src="./prel3.png" width="480px" />
+                </tr>
+            </table>
+        </div>
+
+        <h3 align="middle">Final Images</h3>
+
+      <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="left">
+                    <img src="./1.png" width="480px" />
+                    <td align="right">
+                    <img src="./2.png" width="480px" />
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="left">
+                    <img src="./3.png" width="480px" />
+                    <td align="right">
+                    <img src="./4.png" width="480px" />
+                </tr>
+            </table>
+        </div>
+
+<h2 align="middle">References</h2>
+
+<ul style=“list-style-type:circle>
+    <li>Ammo.js</li>
+    <ul>
+        <li>https://github.com/bulletphysics/bullet3/blob/master/docs/Bullet_User_Manual.pdf</li>
+        <li>https://github.com/kripken/ammo.js/</li>
+    </ul>
+    <li>Three.js and WebGL renderer</li>
+    <ul>
+        <li>https://threejs.org</li>
+        <li>https://threejs.org/docs/index.html#manual/en/introduction/Creating-a-scene</li>
+    </ul>
+    <li>Assets</li>
+    <ul>
+        <li>http://sketchfab.com</li>
+        <li>http://textures-resource.com</li>
+    </ul>
+    <li>Youtube Tutorials</li>
+    <ul>
+        <li>https://www.youtube.com/watch?v=6oFvqLfRnsU</li>
+        <li>https://www.youtube.com/playlist?list=PLCTVwBLCNozSGfxhCIiEH26tbJrQ2_Bw3</li>
+    </ul>
+    <li>External Websites</li>
+    <ul>
+        <li>https://medium.com/@bluemagnificent/collision-detection-in-javascript-3d-physics-using-ammo-js-and-three-js-31a5569291ef</li>
+    </ul>
+</ul>
+
+<h2 align="middle">Problems Encountered</h2>
+
+<ul style=“list-style-type:circle>
+    <li>Queenie Lau</li>
+    <ul>
+        <li>Graphics world design and object population, shooting functionality, object collision</li>
+    </ul>
+    <li>Dakshina Palasamudrum</li>
+    <ul>
+        <li>Graphics world design and object population</li>
+    </ul>
+    <li>Neel Choudhary</li>
+    <ul>
+        <li>Physics world initialization, shooting functionality</li>
+    </ul>
+    <li>Justin Radatti</li>
+    <ul>
+        <li>Graphics and physics world initialization, object collision, object detection, player movement, shooting functionality, object breaking, rigid bodies</li>
+    </ul>
+</ul>
+
