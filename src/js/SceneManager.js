@@ -2,11 +2,11 @@ import * as THREE from "./three.js";
 import { ConvexObjectBreaker } from "./objectBreaking/ConvexObjectBreaker.js";
 import { ConvexGeometry } from "./objectBreaking/ConvexGeometry.js";
 import { Movement } from "./movement/FirstPersonMovement.js"
+import { GLTFLoader } from './GLTFLoader.js';
 
 // Graphics variables
-//let container, stats;
 let textureLoader = new THREE.TextureLoader();
-let camera, movement, scene, renderer;
+let camera, movement, scene, renderer, mixer;
 const clock = new THREE.Clock();
 const mouseCoords = new THREE.Vector2();
 const raycaster = new THREE.Raycaster();
@@ -48,6 +48,11 @@ var white = 0xffffff;
 var blue = 0x039dfc;
 var brown = 0x964B00;
 var gray = 0xa9a9a9;
+
+var coinsGroup = new THREE.Group();
+var coinCount = 0;
+var goombaCount = 0;
+
 
 /* SETUP */ 
 
@@ -224,12 +229,18 @@ function updatephysicsWorld(deltaTime) {
 function animate() {
     requestAnimationFrame( animate );
     movement.update();
+
+    coinsGroup.children.forEach(child => {
+		child.rotateZ(-0.1);
+	});
+
     render();
 }
 
 function render() {
     let deltaTime = clock.getDelta();
     updatephysicsWorld(deltaTime);
+    if ( mixer ) mixer.update( deltaTime );
     renderer.render(scene, camera);
 }
 
@@ -327,6 +338,7 @@ function initObjects() {
 	// updateCounter(2, 2, "goomba"); // testing
 	// updateCounter(3, 4, "coin");
     */
+    // Set up environment
     initFloor();
     initSkyBox();
     initIsland();
@@ -335,6 +347,22 @@ function initObjects() {
 
     scene.fog = new THREE.Fog(0xDFE9F3, -40, 100);
     scene.background = new THREE.Color("rgb(135, 206, 235)");
+
+    // Add Objects 
+    initCoin(-18, 5, 0, .3, .3, .1, 32, 1, false);
+	initCoin(-5, 5, 4, .3, .3, .1, 32, 1, false);
+	initCoin(3, 5, 4, .3, .3, .1, 32, 1, false);
+	initCoin(1, 2, 15, .3, .3, .1, 32, 1, false);
+	initCoin(1.6, 4, 10, .3, .3, .1, 32, 1, false);
+	initCoin(1, 4, 10, .3, .3, .1, 32, 1, false);
+	initCoin(.4, 4, 10, .3, .3, .1, 32, 1, false);
+	initCoin(.7, -4, 10, .3, .3, .1, 32, 1, false);
+	initCoin(1.6, 4, -3, .3, .3, .1, 32, 1, false);
+	initCoin(1, 4, -3, .3, .3, .1, 32, 1, false);
+	initCoin(.4, 4, -3, .3, .3, .1, 32, 1, false);
+    scene.add( coinsGroup );
+
+    initGoombaEnemies(-5, 0.1, 4);
 }
 
 function initFloor() {
@@ -421,7 +449,24 @@ function initIsland() {
 	scene.add( cube );	
 }
 
+function initCoin(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height = 5, radialSegments = 32, heightSegments = 1, openEnded = false) {
+	const geometry =  new THREE.CylinderGeometry( radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded )
 
+	const pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/coin_test.png" );
+	pipeTexture.wrapS = THREE.RepeatWrapping;
+	pipeTexture.wrapT = THREE.RepeatWrapping;
+
+	const pipeMaterial = new THREE.MeshPhongMaterial( {map : pipeTexture} );
+	const cylinder = new THREE.Mesh( geometry, pipeMaterial );
+	cylinder.position.set(x, y, z);
+	cylinder.rotateX(-80.1);
+	cylinder.castShadow = true;
+	cylinder.receiveShadow = true;
+
+	// Bounding box 
+	cylinder.name = "coin";
+	coinsGroup.add(cylinder);
+}
     
 function createParalellepipedWithPhysics( sx, sy, sz, mass, pos, quat, material ) {
     const object = new THREE.Mesh( new THREE.BoxGeometry( sx, sy, sz, 1, 1, 1 ), material );
@@ -449,24 +494,48 @@ function createConvexHullPhysicsShape( coords ) {
     return shape;
 }
 
+function initGoombaEnemies(x = 0, y = 0, z = 0) {
+    const loader = new GLTFLoader();
+	loader.load(
+		// resource URL
+		'assets/animated_goomba/animated_goomba.gltf',
+		// called when the resource is loaded
+		function ( gltf ) {
+			gltf.scene.scale.set(0.02, 0.02, 0.02); 
+			gltf.scene.position.set(-5, 0.25, 4);
+			gltf.scene.rotateY(90);
+			gltf.scene.traverse( function( node ) {
+				if ( node.isMesh ) {
+					node.castShadow = true;
+				}
+			} );
+			
+			mixer = new THREE.AnimationMixer(gltf.scene);
+    		var action = mixer.clipAction( gltf.animations[ 0 ] );
+			action.play();
+			
+			scene.add( gltf.scene );
 
-
-
-/* MATERIALS */
-
-function createRandomColor() {
-    return Math.floor( Math.random() * ( 1 << 24 ) );
+			gltf.scene; // THREE.Group
+			gltf.scenes; // Array<THREE.Group>
+			gltf.cameras; // Array<THREE.Camera>
+			gltf.asset; // Object
+		},
+		// called while loading is progressing
+		function ( xhr ) {
+			console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+		},
+		// called when loading has errors
+		function ( error ) {
+			console.log( 'An error happened' );
+		}
+	);
 }
-
-function createMaterial( color ) {
-    color = color || createRandomColor();
-    return new THREE.MeshPhongMaterial( { color: color } );
-}
-
 
 
 
 /* INPUT */
+
 function initInput() {
 
     window.addEventListener( 'pointerdown', function ( event ) {
@@ -505,6 +574,30 @@ function onWindowResize() {
     camera.updateProjectionMatrix();
     renderer.setSize( window.innerWidth, window.innerHeight );
 }
+
+
+
+
+/* COIN FUNCTIONS */
+
+function updateCounter(currCoins, currGoomba, type) {
+	if (type == 'coin') {
+		var numCoins = currCoins + 1;
+		coinCount = numCoins;
+		document.getElementById("coin-text").innerText = numCoins;
+		removeIntersectedCoinAnimation();
+	}
+	else {
+		var numGoombas = currGoomba + 1;
+		goombaCount = numGoombas;
+		document.getElementById("goomba-text").innerText = numGoombas;
+	}
+}
+
+function removeIntersectedCoinAnimation() {
+	coinsGroup.remove(intersectedObject);
+}
+
 
 
 /* EXPORTS */
