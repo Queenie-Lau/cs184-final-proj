@@ -1,158 +1,352 @@
-/*
-	Initializes scene and player movement
-*/
-import * as THREE from './js/three.js';
+import * as THREE from "./js/three.js";
+import { ConvexObjectBreaker } from "./js/objectBreaking/ConvexObjectBreaker.js";
+import { Movement } from "./js/movement/FirstPersonMovement.js"
 import { GLTFLoader } from './js/GLTFLoader.js';
-import { Movement } from './js/movement/FirstPersonMovement.js';
-import { SceneManager } from './js/SceneManager.js';
 
-var renderer, scene, camera, movement, skybox, skyboxGeo, floorTexture, pipeTexture, clock, mixer, coinsGroup; 
-var sceneManager;
-var shotBallInsideScene;
-var coinsGroup = new THREE.Group();
-var coinCount = 0;
-var goombaCount = 0;
-var cbContactResult, cbContactPairResult;
-var intersectedObject;
-//const raycaster = new THREE.Raycaster();
-//const pointer = new THREE.Vector2();
+// Graphics variables
+let textureLoader = new THREE.TextureLoader();
+let camera, movement, scene, renderer, mixer, loader, intersectedObject;
+const clock = new THREE.Clock();
+const mouseCoords = new THREE.Vector2();
+const raycaster = new THREE.Raycaster();
+const ballMaterial = new THREE.MeshPhongMaterial( { color: 0x202020 } );
 
-//var velocity = new THREE.Vector3();
+// Physics variables
+const gravityConstant = 7.8;
+let collisionConfiguration;
+let dispatcher;
+let broadphase;
+let solver;
+let physicsWorld;
+const margin = 0.05;
 
-clock = new THREE.Clock();
+const convexBreaker = new ConvexObjectBreaker();
 
-// Object breaking variables 
+const rigidBodies = [];
+
+const pos = new THREE.Vector3();
+const quat = new THREE.Quaternion(0,0,0,1);
+let transformAux1;
+let tempBtVec3_1;
+
+const objectsToRemove = [];
+
+var POWERUP = "powerUp";
+var BRICK = "brick";
+var PLACEHOLDER = "NO-NAME";
+var BALL = "BALL";
+
+for ( let i = 0; i < 500; i ++ ) {
+    objectsToRemove[ i ] = null;
+}
+
+let numObjectsToRemove = 0;
+
 const impactPoint = new THREE.Vector3();
-//const convexBreaker = new ConvexObjectBreaker();
 const impactNormal = new THREE.Vector3();
 
-var WIREFRAME = false;
+var player = {height: 1.8, speed: 0.3, turnSpeed: Math.PI * 0.02};
+var platform = {width: 30, height: 30};
 
 var white = 0xffffff;
 var blue = 0x039dfc;
 var brown = 0x964B00;
 var gray = 0xa9a9a9;
 
-// initialize scene
-function main() {
-	
+var coinsGroup = new THREE.Group();
+var coinCount = 0;
+var goombaCount = 0;
 
-	//movement = new Movement( camera, renderer.domElement ); 
+
+/* SETUP */ 
+
+Ammo().then(start);
+function start() {
+    init();
+    animate();
 }
 
-init();
 function init() {
-	let sceneManager = new SceneManager( );
+    initGraphicsWorld();
+    initPhysicsWorld();
+    movement = new Movement( camera, renderer.domElement ); 
+    initObjects();
+    initInput();
 }
 
-// Init Scene, Camera, Lighting, Renderer
+function initPhysicsWorld() {
+    collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
+    dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
+    broadphase = new Ammo.btDbvtBroadphase();
+    solver = new Ammo.btSequentialImpulseConstraintSolver();
+    physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
+    physicsWorld.setGravity(new Ammo.btVector3(0, -gravityConstant, 0));
 
+    transformAux1 = new Ammo.btTransform();
+    tempBtVec3_1 = new Ammo.btVector3( 0, 0, 0 );
+}
 
-/*function animate() {
-		movement.update();
+function initGraphicsWorld() {
+    camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 30000 );
+    camera.position.set(0, player.height, -5);
+    camera.lookAt(new THREE.Vector3(0,player.height,0));
 
-        coinsGroup.children.forEach(child => {
-            child.rotateZ(-0.1);
-        });
+    scene = new THREE.Scene();
 
-        requestAnimationFrame(render);
-        var delta = clock.getDelta();
-        if ( mixer ) mixer.update( delta );
+    var pointLight = new THREE.PointLight(white, 0.1, 50);
+    var directionalLight = new THREE.DirectionalLight(white, 0.7);
+    pointLight.position.set(-10, 10, -3);
+    pointLight.castShadow = true;
+    pointLight.shadow.camera.near = 0.1;
+    pointLight.shadow.camera.far = 20;
+    scene.add(pointLight);
+    scene.add(directionalLight);
+
+    renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.BasicShadowMap;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    document.body.appendChild( renderer.domElement );
+
+    window.addEventListener( 'resize', onWindowResize );
 
 }
+
+
+
+/* PHYSICS UPDATES */
+
+function updatephysicsWorld(deltaTime) {
+    physicsWorld.stepSimulation(deltaTime, 10);
+
+    for( let i = 0; i < rigidBodies.length; i++) {
+        let Graphics_Obj = rigidBodies[i];
+        let Physics_Obj = Graphics_Obj.userData.physicsBody;
+        let motionState = Physics_Obj.getMotionState();
+
+        if(motionState) {
+            motionState.getWorldTransform(transformAux1);
+            let new_pos = transformAux1.getOrigin();
+            let new_qua = transformAux1.getRotation();
+            Graphics_Obj.position.set(new_pos.x(), new_pos.y(), new_pos.z());
+
+            Graphics_Obj.quaternion.set(new_qua.x(), new_qua.y(), new_qua.z(), new_qua.w());
+        }
+    }
+    //checkForCollisions();
+    for ( let i = 0, il = dispatcher.getNumManifolds(); i < il; i ++ ) {
+
+        const contactManifold = dispatcher.getManifoldByIndexInternal( i );
+        const rb0 = Ammo.castObject( contactManifold.getBody0(), Ammo.btRigidBody );
+        const rb1 = Ammo.castObject( contactManifold.getBody1(), Ammo.btRigidBody );
+        const threeObject0 = Ammo.castObject( rb0.getUserPointer(), Ammo.btVector3 ).threeObject;
+        const threeObject1 = Ammo.castObject( rb1.getUserPointer(), Ammo.btVector3 ).threeObject;
+
+        if ( ! threeObject0 && ! threeObject1 ) {
+            continue;
+        }
+        if (threeObject0 && threeObject0.name == POWERUP) {
+            console.log(threeObject0.name);
+        }
+        
+        if (threeObject1 && threeObject1.name == POWERUP) {
+            console.log(threeObject1.name);
+        }
+
+        const userData0 = threeObject0 ? threeObject0.userData : null;
+        const userData1 = threeObject1 ? threeObject1.userData : null;
+        const breakable0 = userData0 ? userData0.breakable : false;
+        const breakable1 = userData1 ? userData1.breakable : false;
+        const collided0 = userData0 ? userData0.collided : false;
+        const collided1 = userData1 ? userData1.collided : false;
+
+        if ( ( ! breakable0 && ! breakable1 ) || ( collided0 && collided1 ) ) {
+            continue;
+        }
+
+        let contact = false;
+        let maxImpulse = 0;
+        for ( let j = 0, jl = contactManifold.getNumContacts(); j < jl; j ++ ) {
+
+            const contactPoint = contactManifold.getContactPoint( j );
+
+            if ( contactPoint.getDistance() < 0 ) {
+                contact = true;
+                const impulse = contactPoint.getAppliedImpulse();
+                
+                if ( impulse > maxImpulse ) {
+                    maxImpulse = impulse;
+                    const pos = contactPoint.get_m_positionWorldOnB();
+                    const normal = contactPoint.get_m_normalWorldOnB();
+                    impactPoint.set( pos.x(), pos.y(), pos.z() );
+                    impactNormal.set( normal.x(), normal.y(), normal.z() );
+                }
+                break;
+            }
+        }
+
+        // If no point has contact, abort
+        if ( ! contact ) continue;
+
+        // Subdivision
+
+        const fractureImpulse = 250;
+
+        if ( breakable0 && ! collided0 && maxImpulse > fractureImpulse ) {
+
+            const debris = convexBreaker.subdivideByImpact( threeObject0, impactPoint, impactNormal, 1, 2, 1.5 );
+            const numObjects = debris.length;
+
+            for ( let j = 0; j < numObjects; j ++ ) {
+                const vel = rb0.getLinearVelocity();
+                const angVel = rb0.getAngularVelocity();
+                const fragment = debris[ j ];
+                fragment.userData.velocity.set( vel.x(), vel.y(), vel.z() );
+                fragment.userData.angularVelocity.set( angVel.x(), angVel.y(), angVel.z() );
+                createDebrisFromBreakableObject( fragment );
+            }
+            objectsToRemove[ numObjectsToRemove ++ ] = threeObject0;
+            userData0.collided = true;
+        }
+
+        if ( breakable1 && ! collided1 && maxImpulse > fractureImpulse ) {
+            const debris = convexBreaker.subdivideByImpact( threeObject1, impactPoint, impactNormal, 1, 2, 1.5 );
+            const numObjects = debris.length;
+
+            for ( let j = 0; j < numObjects; j ++ ) {
+                const vel = rb1.getLinearVelocity();
+                const angVel = rb1.getAngularVelocity();
+                const fragment = debris[ j ];
+                fragment.userData.velocity.set( vel.x(), vel.y(), vel.z() );
+                fragment.userData.angularVelocity.set( angVel.x(), angVel.y(), angVel.z() );
+                createDebrisFromBreakableObject( fragment );
+            }
+            objectsToRemove[ numObjectsToRemove ++ ] = threeObject1;
+            userData1.collided = true;
+        }
+    }
+
+    for ( let i = 0; i < numObjectsToRemove; i ++ ) {
+        removeDebris( objectsToRemove[ i ] );
+    }
+    numObjectsToRemove = 0;
+
+}
+
 function animate() {
-	requestAnimationFrame(animate);
-	movement.update();
+    requestAnimationFrame( animate );
+    movement.update();
 
-	coinsGroup.children.forEach(child => {
+    coinsGroup.children.forEach(child => {
 		child.rotateZ(-0.1);
 	});
 
-	renderer.render( scene, camera );
-	var delta = clock.getDelta();
-	if ( mixer ) mixer.update( delta );
-
-}*/
-
-
-// Instantiates all scene primitives
-
-
-function initMusic() {
-	// create an AudioListener and add it to the camera
-	const listener = new THREE.AudioListener();
-	camera.add( listener );
-
-	// create a global audio source
-	const sound = new THREE.Audio( listener );
-
-	// load a sound and set it as the Audio object's buffer
-	const audioLoader = new THREE.AudioLoader();
-	
-	// Src: https://www.youtube.com/watch?v=tAaGKo4XVvM
-	audioLoader.load( 'music/overworld_theme.ogg', function( buffer ) {
-		sound.setBuffer( buffer );
-		sound.setLoop( true );
-		sound.setVolume( 0.5 );
-		sound.play();
-	});
+    render();
 }
 
-// Instantiate the floor mesh
-function initFloor() {
-	var scale = new THREE.Vector3(platform.width, platform.height, 1);
-	var position = new THREE.Vector3(0,0,0);
-	var mass = 0;
-	var quat = {x: -Math.PI / 2, y: 0, z: 0, w: 1};
-	const floorMaterial = new THREE.MeshPhongMaterial({map : floorTexture})
-	var scale = new THREE.Vector3(platform.width, 1,  platform.height);
-	var position = new THREE.Vector3(0,-0.5,0);
-	var quat = {x: 0, y: 0, z: 0, w: 1};	
-	//.push(sceneManager.initCube(position, scale, mass, floorMaterial, quat));
-	createObject
+function render() {
+    let deltaTime = clock.getDelta();
+    updatephysicsWorld(deltaTime);
+    if ( mixer ) mixer.update( deltaTime );
+    renderer.render(scene, camera);
 }
 
-function initIsland() {
-	const geometry = new THREE.BoxGeometry( platform.width, 10, platform.height );
-	const islandTexture = new THREE.TextureLoader().load( "assets/mario_assets/island_side.png" );
-	islandTexture.wrapS = THREE.RepeatWrapping;
-	islandTexture.wrapT = THREE.RepeatWrapping;
 
-	const wallMaterial = new THREE.MeshPhongMaterial({map : islandTexture})
-	const cube = new THREE.Mesh( geometry, wallMaterial );
-	cube.position.set(0, -5.2, 0);
 
-	scene.add( cube );	
+/* PHYSICS */ 
+
+function createRigidBody( object, physicsShape, mass, pos, quat, vel, angVel ) {
+
+    if ( pos ) {
+        object.position.copy( pos );
+    } else {
+        pos = object.position;
+    }
+
+    if ( quat ) {
+        object.quaternion.copy( quat );
+    } else {
+        quat = object.quaternion;
+    }
+
+    const transform = new Ammo.btTransform();
+    transform.setIdentity();
+    transform.setOrigin( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
+    transform.setRotation( new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w ) );
+    const motionState = new Ammo.btDefaultMotionState( transform );
+
+    const localInertia = new Ammo.btVector3( 0, 0, 0 );
+    physicsShape.calculateLocalInertia( mass, localInertia );
+
+    const rbInfo = new Ammo.btRigidBodyConstructionInfo( mass, motionState, physicsShape, localInertia );
+    const body = new Ammo.btRigidBody( rbInfo );
+
+    body.setFriction( 0.5 );
+
+    if ( vel ) {
+        body.setLinearVelocity( new Ammo.btVector3( vel.x, vel.y, vel.z ) );
+    }
+
+    if ( angVel ) {
+        body.setAngularVelocity( new Ammo.btVector3( angVel.x, angVel.y, angVel.z ) );
+    }
+
+    object.userData.physicsBody = body;
+    object.userData.collided = false;
+
+    scene.add( object );
+
+    if ( mass > 0 ) {
+        rigidBodies.push( object );
+        body.setActivationState( 4 );
+    }
+
+    physicsWorld.addRigidBody( body );
+
+    body.threeObject = object;
+    return body;
 }
 
-// Instantiate player obstacles
+function createDebrisFromBreakableObject( object ) {
+
+    object.castShadow = true;
+    object.receiveShadow = true;
+
+    const shape = createConvexHullPhysicsShape( object.geometry.attributes.position.array );
+    shape.setMargin( margin );
+
+    const body = createRigidBody( object, shape, object.userData.mass, null, null, object.userData.velocity, object.userData.angularVelocity );
+
+    // Set pointer back to the three object only in the debris objects
+    const btVecUserData = new Ammo.btVector3( 0, 0, 0 );
+    btVecUserData.threeObject = object;
+    body.setUserPointer( btVecUserData );
+
+}
+
+function removeDebris( object ) {
+    scene.remove( object );
+    physicsWorld.removeRigidBody( object.userData.physicsBody );
+}
+
+
+
+/* INIT OBJECTS */
+
+
+
 function initObjects() {
-	initTree(-13, -6, 2.5, 6);
-   	initTree(5, 5, 1, 8);
-   	initTree(3, 3);
-   	initTree(-6, 9, 1.5, 4, 7);
-   	initTree(-7.5, -7.5, 2, 6, 7);
-   	initTree(10, 1);
-   	initTree(14, 14);
-   	initTree(10, -10);
+    // Set up environment
+    initFloor();
+    initSkyBox();
+    initIsland();
 
-	initCapsuleTree(.5, .5, -9, 0.4, 1);
-	initCapsuleTree(1, 1, 7, 0.4, 1);
-	initCapsuleTree(.1, .1, 30, 30, 30);
+    scene.fog = new THREE.Fog(0xDFE9F3, -40, 100);
+    scene.background = new THREE.Color("rgb(135, 206, 235)");
 
-	initBricks(3.7, 4, 10, .7, .7, .7, brown);
-   	initBricks(4.4, 4, 10, .7, .7, .7, brown);
-   	initBricks(5.1, 4, 10, .7, .7, .7, brown);
-   	initBricks(6, .5, -4, .7, .7, .7, brown);
-   	initBricks(4, 5, -10, .7, .7, .7, brown);
-   	initBricks(-4, 1, 0, .7, .7, .7, brown);
-
-	initPowerUpBox(14, 3, 5, .7, .7, .7);
-   	initPowerUpBox(10, 3, 5, .7, .7, .7);
-   	initPowerUpBox(-14, 3, 5, .7, .7, .7);
-   	initPowerUpBox(3, 4, 10, .7, .7, .7);
-	
-	initCoin(-18, 5, 0, .3, .3, .1, 32, 1, false);
+    // Add Objects 
+    initCoin(-18, 5, 0, .3, .3, .1, 32, 1, false);
 	initCoin(-5, 5, 4, .3, .3, .1, 32, 1, false);
 	initCoin(3, 5, 4, .3, .3, .1, 32, 1, false);
 	initCoin(1, 2, 15, .3, .3, .1, 32, 1, false);
@@ -160,61 +354,114 @@ function initObjects() {
 	initCoin(1, 4, 10, .3, .3, .1, 32, 1, false);
 	initCoin(.4, 4, 10, .3, .3, .1, 32, 1, false);
 	initCoin(.7, -4, 10, .3, .3, .1, 32, 1, false);
-
 	initCoin(1.6, 4, -3, .3, .3, .1, 32, 1, false);
 	initCoin(1, 4, -3, .3, .3, .1, 32, 1, false);
 	initCoin(.4, 4, -3, .3, .3, .1, 32, 1, false);
+    scene.add( coinsGroup );
 
-	initCylinderPipes(-8, 0, 5);
-	initCylinderPipes(1, 1, 10, 1, 1, 3, 32, 1, false);
+    initGoombaEnemies(-5, 0.1, 4);
 
-	//addCoinsRandomly(); // DO COLLISION CHECKS
-	initFlower(6, 6);
+    initBricks(3.6, 0.35, 10, .7, .7, .7, brown);
+   	initBricks(4.4, 0.35, 10, .7, .7, .7, brown);
+   	initBricks(5.2, 0.35, 10, .7, .7, .7, brown);
+   	initBricks(6, 0.35, -4, .7, .7, .7, brown);
+   	initBricks(4, 0.35, -10, .7, .7, .7, brown);
+   	initBricks(-4, 0.35, 0, .7, .7, .7, brown);
+
+    initPowerUpBox(14, 3, 5, .7, .7, .7);
+   	initPowerUpBox(10, 3, 5, .7, .7, .7);
+   	initPowerUpBox(-14, 3, 5, .7, .7, .7);
+   	initPowerUpBox(3, 4, 10, .7, .7, .7);
+
+    initCylinderPipes(-8, 0, 5);
+    initCylinderPipes(1, 1, 10, 1, 1, 3, 32, 1, false);
+
+    initFlower(6, 6);
  	initFlower(-13, 1);
-	// addDecorRandomly(); // DO COLLISION CHECKS, takes up a lot of mem.
-	initTetrahedron(0, 0, 0);
-	// initSphere(); // Player will be shooting white balls
+
+     initTree(-13, -6, 2.5, 6);
+     initTree(5, 5, 1, 8);
+     initTree(3, 3);
+     initTree(-6, 9, 1.5, 4, 7);
+     initTree(-7.5, -7.5, 2, 6, 7);
+     initTree(10, 1);
+     initTree(14, 14);
+     initTree(10, -10);
+
+    initCapsuleTree(.5, .5, -9, 0.4, 1);
+    initCapsuleTree(1, 1, 7, 0.4, 1);
+    initCapsuleTree(.1, .1, 30, 30, 30);
 }
 
-function initTetrahedron(x = 0, y = 0, z = 0) {
-	const radius = 6;
-	const tetra = new THREE.TetrahedronGeometry(radius, 0);
-	tetra.receiveShadow = true;
-	tetra.castShadow = true;
+
+
+function initFloor() {
+    const floorTexture = new THREE.TextureLoader().load( "assets/mario_assets/grass_a1.png" );
+	floorTexture.wrapS = THREE.RepeatWrapping;
+	floorTexture.wrapT = THREE.RepeatWrapping;
+	floorTexture.repeat.set( 4, 4 );
+	const floorMaterial = new THREE.MeshPhongMaterial({map : floorTexture})
+
+    pos.set( 0, -0.5, 0);
+    quat.set( 0, 0, 0, 1 );
+    const ground = createParalellepipedWithPhysics( platform.width, 1, platform.height, 0, pos, quat, floorMaterial );
+    ground.receiveShadow = true;
+
+    scene.add(ground);
 }
 
-function initCoin(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height = 5, radialSegments = 32, heightSegments = 1, openEnded = false) {
-	const geometry =  new THREE.CylinderGeometry( radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded )
 
-	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/coin_test.png" );
+function initPowerUpBox(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1) {
+	const pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/question_box.png" );
 	pipeTexture.wrapS = THREE.RepeatWrapping;
 	pipeTexture.wrapT = THREE.RepeatWrapping;
+	const wallMaterial = new THREE.MeshPhongMaterial({map : pipeTexture})
 
-	const pipeMaterial = new THREE.MeshPhongMaterial( {map : pipeTexture} );
-	const cylinder = new THREE.Mesh( geometry, pipeMaterial );
-	cylinder.position.set(x, y, z);
-	cylinder.rotateX(-80.1);
-	cylinder.castShadow = true;
-	cylinder.receiveShadow = true;
-
-	// Bounding box 
-	let coinBB = new THREE.Sphere(cylinder.position, radiusTop);
-	//cylinder.name = id.coin; 
-	cylinder.name = "coin";
-	coinsGroup.add(cylinder);
-	// scene.add( cylinder );
+    initBlockWithPhysics(x, y, z, width, height, depth, wallMaterial, POWERUP, 0);
 }
+
+function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color, breakable = true) {
+	const pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/brick.png" );
+	pipeTexture.wrapS = THREE.RepeatWrapping;
+	pipeTexture.wrapT = THREE.RepeatWrapping;
+	var wallMaterial = new THREE.MeshPhongMaterial({map : pipeTexture})
+	if (color == white) {
+		wallMaterial = new THREE.MeshPhongMaterial( { color: white } );
+	}
+
+    if (!breakable) {
+        initBlockWithPhysics(x, y, z, width, height, depth, wallMaterial, BRICK, 3);
+    } else {
+        initBreakableBlock(x, y, z, width, height, depth, wallMaterial, BRICK, 1000);
+    }
+ 
+}
+
+function initBlockWithPhysics(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, material, name=PLACEHOLDER, mass = 0) {
+	pos.set( x, y, z);
+    quat.set(0, 0, 0, 1);
+    const block = createParalellepipedWithPhysics( width, height, depth, mass, pos, quat, material, name);
+    block.receiveShadow = true;
+    scene.add(block);
+}
+
+function initBreakableBlock(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, material, name=PLACEHOLDER, mass=1000) {
+    pos.set( x, y, z);
+    quat.set(0, 0, 0, 1);
+    const scale = new THREE.Vector3( width / 2, height / 2, depth / 2);
+    createObject(mass, scale, pos, quat, material, BRICK);
+} 
 
 function initCylinderPipes(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height = 3, radialSegments = 32, heightSegments = 1, openEnded = false) {
 	const geometry =  new THREE.CylinderGeometry( radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded )
 
-	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/pipe.png" );
+	const pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/pipe.png" );
 	pipeTexture.wrapS = THREE.RepeatWrapping;
 	pipeTexture.wrapT = THREE.RepeatWrapping;
 	pipeTexture.repeat.set( 4, 4 );	
 
 	const pipeMaterial = new THREE.MeshPhongMaterial( {map : pipeTexture} );
-	const pipeColor =  new THREE.MeshPhongMaterial({color: 0x2CB01A, wireframe: WIREFRAME});
+	const pipeColor =  new THREE.MeshPhongMaterial({color: 0x2CB01A, wireframe: false});
 	const cylinder = new THREE.Mesh( geometry, pipeColor );
 	cylinder.position.set(x, y, z);
 	cylinder.castShadow = true;
@@ -239,83 +486,6 @@ function initTorusForPipe(x = 0, y = 0, z = 0, radius = 1, tube = .2, radialSegm
 	//torus.name = id.pipe;
 	scene.add( torus );
 }
-
-function initSkyBox() {
-	const materialTextures = [];
-	const front = new THREE.TextureLoader().load("assets/mario_assets/water.png");
-	const back = new THREE.TextureLoader().load("assets/mario_assets/sky_no_sun.png");
-	const up = new THREE.TextureLoader().load("assets/mario_assets/sky_top.png");
-	const down = new THREE.TextureLoader().load("assets/mario_assets/water_bottom.png");
-	const right = new THREE.TextureLoader().load("assets/mario_assets/sky_no_sun.png");
-	const left = new THREE.TextureLoader().load("assets/mario_assets/sky_no_sun.png");
-
-	materialTextures.push(new THREE.MeshBasicMaterial({ map: front }));
-	materialTextures.push(new THREE.MeshBasicMaterial({ map: back }));
-	materialTextures.push(new THREE.MeshBasicMaterial({ map: up }));
-	materialTextures.push(new THREE.MeshBasicMaterial({ map: down }));
-	materialTextures.push(new THREE.MeshBasicMaterial({ map: right }));
-	materialTextures.push(new THREE.MeshBasicMaterial({ map: left }));
-
-	for (let i = 0; i < 6; i++) {
-		materialTextures[i].side = THREE.BackSide;
-	}
-
-	skyboxGeo = new THREE.BoxGeometry(100, 100, 100);
-	skybox = new THREE.Mesh(skyboxGeo, materialTextures);
-	scene.add(skybox);
-}
-
-function initBricks(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1, color) {
-	const cube = new THREE.BoxGeometry(width, height, depth);
-
-	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/brick.png" );
-	pipeTexture.wrapS = THREE.RepeatWrapping;
-	pipeTexture.wrapT = THREE.RepeatWrapping;
-
-	var wallMaterial = new THREE.MeshPhongMaterial({map : pipeTexture})
-	if (color == white) {
-		wallMaterial = new THREE.MeshPhongMaterial( { color: white } );
-	}
-
-	var position = new THREE.Vector3(x, y, z);
-	var scale = new THREE.Vector3(width, height, depth);
-	var mass = 3;
-
-	var cube_to_add = sceneManager.initCube(position, scale, mass, wallMaterial);
-	cube.userData.tag = "cube"; // not setting correctly..?
-	rigidBody_List.push( cube_to_add );
-
-	/*
-	const cube = new THREE.Mesh( geometry, wallMaterial );
-	cube.position.set(x, y, z);
-	cube.receiveShadow = true;
-	cube.castShadow = true;
-
-	let cubeBoundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
-	cubeBoundingBox.setFromObject(cube);
-	
-	//cube.name = id.regularBox;
-	scene.add( cube );
-
-
-	return cube;*/
-}
-
-function initPowerUpBox(x = 0, y = 0, z = 0, width = 1, height = 1, depth = 1) {
-	const geometry = new THREE.BoxGeometry(width, height, depth);
-
-	pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/question_box.png" );
-	pipeTexture.wrapS = THREE.RepeatWrapping;
-	pipeTexture.wrapT = THREE.RepeatWrapping;
-
-	const wallMaterial = new THREE.MeshPhongMaterial({map : pipeTexture})
-
-	var position = new THREE.Vector3(x, y, z);
-	var scale = new THREE.Vector3(width, height, depth);
-	var mass = 0;
-	rigidBody_List.push( sceneManager.initCube(position, scale, mass, wallMaterial) );
-}
-
 function initCapsuleTree(radius = .1, length = .1, x = 0, y = 0, z = 0) {
 	const treeLeafTexture = new THREE.TextureLoader().load( "assets/mario_assets/tree_leaf.png" );
 	treeLeafTexture.wrapS = THREE.RepeatWrapping;
@@ -360,244 +530,104 @@ function initTree(x = 0, z = 0, width = 1.5, height = 4, scale = 5) {
 	treeLeaves.position.set(x, trunkHeight + height / 2, z);
 	treeLeaves.receiveShadow = true;
 	treeLeaves.castShadow = true;
-	//treeLeaves.name = id.tree;
-	//treeTrunk.name = id.tree;
+
 	scene.add(treeLeaves);
 	scene.add(treeTrunk);
 }
 
-// Instantiate scene lights
-function initLights() {
-	//const ambientLight = new THREE.AmbientLight(white, 0.01);
-	
-	//scene.add(ambientLight);
-}
+function initSkyBox() {
+	const materialTextures = [];
+	const front = new THREE.TextureLoader().load("assets/mario_assets/water.png");
+	const back = new THREE.TextureLoader().load("assets/mario_assets/sky_no_sun.png");
+	const up = new THREE.TextureLoader().load("assets/mario_assets/sky_top.png");
+	const down = new THREE.TextureLoader().load("assets/mario_assets/water_bottom.png");
+	const right = new THREE.TextureLoader().load("assets/mario_assets/sky_no_sun.png");
+	const left = new THREE.TextureLoader().load("assets/mario_assets/sky_no_sun.png");
 
-// Instantiate boundaries
-function initBoundaries(color = white) {
-	initBricks(0, 0, platform.height / 2, platform.width + 1, 1.5, 1, color);
-	initBricks(0, 0, -platform.height / 2, platform.width + 1, 1.5, 1, color);
-	initBricks(platform.width / 2, 0, 0, 1, 1.5, platform.height, color);
-	initBricks(-platform.width / 2, 0, 0, 1, 1.5, platform.height, color);
-}
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: front }));
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: back }));
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: up }));
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: down }));
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: right }));
+	materialTextures.push(new THREE.MeshBasicMaterial({ map: left }));
 
-function initContactResultCallback(){
-
-	cbContactResult = new Ammo.ConcreteContactResultCallback();
-
-	cbContactResult.addSingleResult = function(cp, colObj0Wrap, partId0, index0, colObj1Wrap, partId1, index1){
-
-		let contactPoint = Ammo.wrapPointer( cp, Ammo.btManifoldPoint );
-		const distance = contactPoint.getDistance();
-
-		if( distance > 0 ) return;
-
-		let colWrapper0 = Ammo.wrapPointer( colObj0Wrap, Ammo.btCollisionObjectWrapper );
-		let rb0 = Ammo.castObject( colWrapper0.getCollisionObject(), Ammo.btRigidBody );
-
-		let colWrapper1 = Ammo.wrapPointer( colObj1Wrap, Ammo.btCollisionObjectWrapper );
-		let rb1 = Ammo.castObject( colWrapper1.getCollisionObject(), Ammo.btRigidBody );
-
-		let threeObject0 = rb0.threeObject;
-		let threeObject1 = rb1.threeObject;
-		let tag, localPos, worldPos;
-
-		if ( threeObject0.userData.tag != "ball" ) {
-			tag = threeObject0.userData.tag;
-			localPos = contactPoint.get_m_localPointA();
-			worldPos = contactPoint.get_m_positionWorldOnA();
-
-		}
-		else 
-		{
-			tag = threeObject1.userData.tag;
-			localPos = contactPoint.get_m_localPointB();
-			worldPos = contactPoint.get_m_positionWorldOnB();
-		}
-
-		let localPosition = {x: localPos.x(), y: localPos.y(), z: localPos.z()};
-		let worldPosition = {x: worldPos.x(), y: worldPos.y(), z: worldPos.z()};
-
-		console.log( { tag, localPosition, worldPosition } );
-
+	for (let i = 0; i < 6; i++) {
+		materialTextures[i].side = THREE.BackSide;
 	}
+
+	var skyboxGeo = new THREE.BoxGeometry(100, 100, 100);
+	var skybox = new THREE.Mesh(skyboxGeo, materialTextures);
+	scene.add(skybox);
+}
+function initIsland() {
+	const geometry = new THREE.BoxGeometry( platform.width, 10, platform.height );
+	const islandTexture = new THREE.TextureLoader().load( "assets/mario_assets/island_side.png" );
+	islandTexture.wrapS = THREE.RepeatWrapping;
+	islandTexture.wrapT = THREE.RepeatWrapping;
+
+	const wallMaterial = new THREE.MeshPhongMaterial({map : islandTexture})
+	const cube = new THREE.Mesh( geometry, wallMaterial );
+	cube.position.set(0, -5.2, 0);
+
+	scene.add( cube );	
 }
 
-function initContactPairResultCallback(){
-	cbContactPairResult = new Ammo.ConcreteContactResultCallback();
-	cbContactPairResult.hasContact = false;
+function initCoin(x = 0, y = 0, z = 0, radiusTop = 1, radiusBottom = 1, height = 5, radialSegments = 32, heightSegments = 1, openEnded = false) {
+	const geometry =  new THREE.CylinderGeometry( radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded )
 
-	cbContactPairResult.addSingleResult = function(cp, colObj0Wrap, partId0, index0, colObj1Wrap, partId1, index1){
-		let contactPoint = Ammo.wrapPointer( cp, Ammo.btManifoldPoint );
-		const distance = contactPoint.getDistance();
-		if( distance > 0 ) return;
-		this.hasContact = true;
-	}
+	const pipeTexture = new THREE.TextureLoader().load( "assets/mario_assets/coin_test.png" );
+	pipeTexture.wrapS = THREE.RepeatWrapping;
+	pipeTexture.wrapT = THREE.RepeatWrapping;
+
+	const pipeMaterial = new THREE.MeshPhongMaterial( {map : pipeTexture} );
+	const cylinder = new THREE.Mesh( geometry, pipeMaterial );
+	cylinder.position.set(x, y, z);
+	cylinder.rotateX(-80.1);
+	cylinder.castShadow = true;
+	cylinder.receiveShadow = true;
+
+	// Bounding box 
+	cylinder.name = "coin";
+	coinsGroup.add(cylinder);
+}
+    
+function createParalellepipedWithPhysics( sx, sy, sz, mass, pos, quat, material, name=PLACEHOLDER) {
+    const object = new THREE.Mesh( new THREE.BoxGeometry( sx, sy, sz, 1, 1, 1 ), material );
+    const shape = new Ammo.btBoxShape( new Ammo.btVector3( sx * 0.5, sy * 0.5, sz * 0.5 ) );
+    object.name = name;
+    shape.setMargin( margin );
+    createRigidBody( object, shape, mass, pos, quat );
+    return object;
 }
 
-function checkForCollisions() {
-	// tutorial src: 
-	// https://medium.com/@bluemagnificent/collision-detection-in-javascript-3d-physics-using-ammo-js-and-three-js-31a5569291ef
-	let dispatcher = physicsWorld.getDispatcher();
-	let numManifolds = dispatcher.getNumManifolds();
-	for ( let i = 0; i < numManifolds; i ++ ) {
-		let contactManifold = dispatcher.getManifoldByIndexInternal( i );
-		let numContacts = contactManifold.getNumContacts();
-
-		for ( let j = 0; j < numContacts; j++ ) {
-			let contactPoint = contactManifold.getContactPoint( j );
-
-			let rb0 = Ammo.castObject( contactManifold.getBody0(), Ammo.btRigidBody );
-			let rb1 = Ammo.castObject( contactManifold.getBody1(), Ammo.btRigidBody );
-
-			// Get ball + colliding cube
-			let cubeObject = rb0.threeObject; // not being recognized
-			let ballObject = rb1.threeObject;
-
-			if ( ! cubeObject && ! ballObject ) continue;
-			let userData0 = cubeObject ? cubeObject.userData : null;
-			let userData1 = ballObject ? ballObject.userData : null;
-			let tag0 = userData0 ? userData0.tag : "none";
-			let tag1 = userData1 ? userData1.tag : "none";
-
-			let distance = contactPoint.getDistance();
-			if( distance > 0.0 ) continue;
-
-			let velocity0 = rb0.getLinearVelocity();
-			let velocity1 = rb1.getLinearVelocity();
-			let worldPos0 = contactPoint.get_m_positionWorldOnA();
-			let worldPos1 = contactPoint.get_m_positionWorldOnB();
-			let localPos0 = contactPoint.get_m_localPointA();
-			let localPos1 = contactPoint.get_m_localPointB();
-
-
-			// console.log({
-			// 	manifoldIndex: i, 
-			// 	contactIndex: j, 
-			// 	distance: distance, 
-			// 	object0:{
-			// 	 tag: tag0,
-			// 	 velocity: {x: velocity0.x(), y: velocity0.y(), z: velocity0.z()},
-			// 	 worldPos: {x: worldPos0.x(), y: worldPos0.y(), z: worldPos0.z()},
-			// 	 localPos: {x: localPos0.x(), y: localPos0.y(), z: localPos0.z()}
-			// 	},
-			// 	object1:{
-			// 	 tag: tag1,
-			// 	 velocity: {x: velocity1.x(), y: velocity1.y(), z: velocity1.z()},
-			// 	 worldPos: {x: worldPos1.x(), y: worldPos1.y(), z: worldPos1.z()},
-			// 	 localPos: {x: localPos1.x(), y: localPos1.y(), z: localPos1.z()}
-			// 	}
-			//    });
-			// console.log(isBallTouchingAnotherObject(ballObject)) breaks.
-
-			// Manually check distances for now and get object closest to target
-			// check distances & get the object hit - either coin or block
-
-			// var position = new THREE.Vector3();
-			// position.getPositionFromMatrix( scene.matrixWorld );
-
-			var intersectedObjectWorldPosition = intersectedObject.position;
-			console.log("Intersected object position: ", intersectedObjectWorldPosition);
-			console.log("World positions: ", worldPos1.x(), worldPos1.y(), worldPos1.z());
-			// console.log(Math.ceil(worldPos1.x()), Math.ceil(worldPos1.y()), Math.ceil(worldPos1.z()));
-			
-			// set 0.3 threshold for now
-			if ( (intersectedObjectWorldPosition.x - worldPos1.x()) <= 0.3 ) {
-				if ( (intersectedObjectWorldPosition.y - worldPos1.y()) <= 0.3 ) {
-					if ( (intersectedObjectWorldPosition.z - worldPos1.z()) <= 0.3 ) {
-						console.log("Correctly hit an object!")
-					}
-				}
-			}
-		}
-	}
+function createObject( mass, scale, pos, quat, material, name=PLACEHOLDER) {
+    const object = new THREE.Mesh( new THREE.BoxGeometry( scale.x * 2, scale.y * 2, scale.z * 2), material );
+    object.name = name;
+    object.position.copy( pos );
+    object.quaternion.copy( quat );
+    convexBreaker.prepareBreakableObject( object, mass, new THREE.Vector3(), new THREE.Vector3(), true );
+    createDebrisFromBreakableObject( object );
 }
 
-function isBallTouchingAnotherObject(ball) {
-	physicsWorld.contactTest( ball.userData.physicsBody , cbContactResult );
+function createConvexHullPhysicsShape( coords ) {
+    const shape = new Ammo.btConvexHullShape();
+    for ( let i = 0, il = coords.length; i < il; i += 3 ) {
+        tempBtVec3_1.setValue( coords[ i ], coords[ i + 1 ], coords[ i + 2 ] );
+        const lastOne = ( i >= ( il - 3 ) );
+        shape.addPoint( tempBtVec3_1, lastOne );
+    }
+    return shape;
 }
 
-
-function addCoinsRandomly() {
-	for (let i = 0; i < 50; i++) {
-		var ranX = Math.floor(Math.random() * platform.width - 10) + -5;
-		var ranZ = Math.floor(Math.random() * platform.width - 10) - 5;
-		initCoin(ranX, 2, ranZ, .3, .3, .1, 32, 1, false);
-	}
-}
-
-function addFlowersRandomly() {
-	for (let i = 0; i < 20; i++) {
-		var ranX = Math.floor(Math.random() * platform.width - 10) + -5;
-		var ranZ = Math.floor(Math.random() * platform.width - 10) - 5;
-		initFlower(ranX, ranZ);
-	}
-}
-
-function initPlayerGun() {
-	loader.load(
-		// resource URL
-		'assets/toy_gun/scene.gltf',
-		function ( gltf ) {
-			gltf.scene.scale.set(.05, .05, .05);
-			gltf.scene.position.set(camera.position.x , camera.position.y , camera.position.z);
-			
-			// camera.position.normalize();
-			// gltf.scene.position.set(normalizedPos.x, normalizedPos.y, normalizedPos.z);
-			// gltf.scene.position.set( (camera.position.x - Math.sin(camera.rotation.y + Math.PI/6)) * 0.75, camera.position.y - 0.5 + Math.sin(20) * 0.01, camera.position.z + Math.cos(camera.rotation.y + Math.PI/6) * 0.75);
-
-			gltf.scene.traverse( function( node ) {
-				if ( node.isMesh ) {
-					node.castShadow = true;
-				}
-			} );
-			gltf.scene.rotateX(23);
-			
-			const box = new THREE.Box3().setFromObject(gltf.scene);
-			const size = box.getSize(new THREE.Vector3()).length();
-			const center = box.getCenter(new THREE.Vector3());
-
-			// Testing
-			console.log(center);
-			console.log("Gun position: ", gltf.scene.position.normalize());
-			console.log("Camera coordinates", camera.position.normalize());
-
-			scene.add( gltf.scene );
-	});
-}
-
-function updateCounter(currCoins, currGoomba, type) {
-	if (type == 'coin') {
-		var numCoins = currCoins + 1;
-		coinCount = numCoins;
-		document.getElementById("coin-text").innerText = numCoins;
-		removeIntersectedCoinAnimation();
-	}
-	else {
-		var numGoombas = currGoomba + 1;
-		goombaCount = numGoombas;
-		document.getElementById("goomba-text").innerText = numGoombas;
-	}
-}
-
-function removeIntersectedCoinAnimation() {
-	coinsGroup.remove(intersectedObject);
-}
-
-
-
-// Instantiate a loader
-const loader = new GLTFLoader();
-
-// Load a glTF goomba enemey
 function initGoombaEnemies(x = 0, y = 0, z = 0) {
+    loader = new GLTFLoader();
 	loader.load(
 		// resource URL
 		'assets/animated_goomba/animated_goomba.gltf',
 		// called when the resource is loaded
 		function ( gltf ) {
 			gltf.scene.scale.set(0.02, 0.02, 0.02); 
-			gltf.scene.position.set(-5, 0.1, 4);
+			gltf.scene.position.set(-5, 0.25, 4);
 			gltf.scene.rotateY(90);
 			gltf.scene.traverse( function( node ) {
 				if ( node.isMesh ) {
@@ -627,13 +657,6 @@ function initGoombaEnemies(x = 0, y = 0, z = 0) {
 	);
 }
 
-function texturizeFloor() {
-	floorTexture = new THREE.TextureLoader().load( "assets/mario_assets/grass_a1.png" );
-	floorTexture.wrapS = THREE.RepeatWrapping;
-	floorTexture.wrapT = THREE.RepeatWrapping;
-	floorTexture.repeat.set( 4, 4 );	
-}
-
 function initFlower(x = 0, z = 0) {
 	loader.load(
 		// resource URL
@@ -653,89 +676,83 @@ function initFlower(x = 0, z = 0) {
 
 
 
-/*  SHOOTING CONTROLS */
+/* INPUT */
 
-function onMouseDown(event) {
-	if ( shotBallInsideScene ) return;
-	mouseCoords.set((event.clientX / window.innerWidth) * 2 - 1, - (event.clientY / window.innerHeight) * 2 + 1);
-	raycaster.setFromCamera(mouseCoords, camera);
+function initInput() {
 
-	tmpPos.copy(raycaster.ray.direction);
-	tmpPos.add(raycaster.ray.origin);
+    window.addEventListener( 'pointerdown', function ( event ) {
 
-	let pos = {x:tmpPos.x, y:tmpPos.y, z:tmpPos.z};
-	let radius = 0.25;
-	let quat = {x:0, y:0, z:0, w:1};
-	let mass = 1;
+        if (movement.isLocked() == true) {
+            mouseCoords.set(
+                ( event.clientX / window.innerWidth ) * 2 - 1,
+                - ( event.clientY / window.innerHeight ) * 2 + 1
+            );
 
-	var geometry = new THREE.SphereGeometry( .2, 64, 16 );
-	var material = new THREE.MeshPhongMaterial( { color: white } );
-	var ball = new THREE.Mesh( geometry, material );
+            raycaster.setFromCamera( mouseCoords, camera );
 
-	ball.position.set(pos.x, pos.y, pos.z);
-	ball.userData.tag = "ball";
-	scene.add(ball);
-	
-	let transform = new Ammo.btTransform();
-	transform.setIdentity();
-	transform.setOrigin(new Ammo.btVector3(pos.x, pos.y, pos.z));
-	transform.setRotation(new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w));
-	let motionState = new Ammo.btDefaultMotionState(transform);
+            // Creates a ball and throws it
+            const ballMass = 35;
+            const ballRadius = 0.3;
 
-	let collisionShape = new Ammo.btSphereShape( radius );
-	collisionShape.setMargin(0.05);
+            const ball = new THREE.Mesh( new THREE.SphereGeometry( ballRadius, 14, 10 ), ballMaterial );
+            ball.castShadow = true;
+            ball.receiveShadow = true;
+            const ballShape = new Ammo.btSphereShape( ballRadius );
+            ballShape.setMargin( margin );
+            pos.copy( raycaster.ray.direction );
+            pos.add( raycaster.ray.origin );
+            quat.set( 0, 0, 0, 1 );
+            const ballBody = createRigidBody( ball, ballShape, ballMass, pos, quat );
 
-	let localInertia = new Ammo.btVector3(0,0,0);
-	collisionShape.calculateLocalInertia(mass, localInertia);
+            pos.copy( raycaster.ray.direction );
+            pos.multiplyScalar( 24 );
+            ballBody.setLinearVelocity( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
 
-	let rbInfo = new Ammo.btRigidBodyConstructionInfo(
-		mass,
-		motionState,
-		collisionShape,
-		localInertia
-	);
+            var intersects = raycaster.intersectObjects( scene.children );
+            if (intersects.length > 0) {
+                intersectedObject = intersects[0].object;
 
-	let rBody = new Ammo.btRigidBody(rbInfo);
-	physicsWorld.addRigidBody( rBody);
+                if (intersectedObject.name == "coin") {
+                    updateCounter(coinCount, goombaCount, "coin");
+                } else if (intersectedObject.name == "goomba") {
+                    updateCounter(coinCount, goombaCount, "goomba");
+                }
+            }
+    }
+} );
 
-	tmpPos.copy(raycaster.ray.direction);
-	tmpPos.multiplyScalar(30);
+    
+}
 
-	rBody.setLinearVelocity(new Ammo.btVector3(tmpPos.x, tmpPos.y, tmpPos.z));
-	
-	rBody.threeObject = ball;
-	rBody.setFriction(4);
-	rBody.setRollingFriction(10);
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize( window.innerWidth, window.innerHeight );
+}
 
-	ball.userData.physicsBody = rBody;
-	rigidBody_List.push(ball);
-	shotBallInsideScene = true;
 
-	setTimeout(function(){
-		shotBallInsideScene = false;
-		physicsWorld.removeRigidBody(ball.userData.physicsBody);
-		scene.remove(ball);
-	}, 500);
 
-	var intersects = raycaster.intersectObjects( scene.children );
-    if ( intersects.length > 0 ) {
-		console.log("HIT AN OBJECT!");
-		console.log(intersects[ 0 ].object);
-		console.log(intersects[ 0 ].object.name); // get name of object
-		console.log("Object world position:", intersects[ 0 ].object.position); // get WORLD position
-		intersectedObject = intersects[ 0 ].object;
 
-		console.log("# Coins Hit", coinCount);
+/* COIN FUNCTIONS */
 
-		if (intersectedObject.name == "coin") {
-			updateCounter(coinCount, goombaCount, "coin");
-		}
-
+function updateCounter(currCoins, currGoomba, type) {
+	if (type == 'coin') {
+		var numCoins = currCoins + 1;
+		coinCount = numCoins;
+		document.getElementById("coin-text").innerText = numCoins;
+		removeIntersectedCoinAnimation();
+	}
+	else {
+		var numGoombas = currGoomba + 1;
+		goombaCount = numGoombas;
+		document.getElementById("goomba-text").innerText = numGoombas;
 	}
 }
 
-function addEventHandlers() {
-	window.addEventListener('mousedown', onMouseDown, false);
+function removeIntersectedCoinAnimation() {
+	coinsGroup.remove(intersectedObject);
 }
 
-window.onload = main;
+
+
+/* EXPORTS */
