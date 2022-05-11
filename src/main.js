@@ -235,13 +235,16 @@ function initGraphicsWorld() {
     scene = new THREE.Scene();
 
     var pointLight = new THREE.PointLight(white, 0.1, 50);
-    var directionalLight = new THREE.DirectionalLight(white, 0.7);
+    var directionalLight = new THREE.DirectionalLight(white, 0.5);
     pointLight.position.set(-10, 10, -3);
     pointLight.castShadow = true;
     pointLight.shadow.camera.near = 0.1;
-    pointLight.shadow.camera.far = 20;
+
     scene.add(pointLight);
     scene.add(directionalLight);
+
+    var ambientLight = new THREE.AmbientLight(white, 0.4);
+    scene.add(ambientLight);
 
     renderer = new THREE.WebGLRenderer( { antialias: true } );
     renderer.setSize( window.innerWidth, window.innerHeight );
