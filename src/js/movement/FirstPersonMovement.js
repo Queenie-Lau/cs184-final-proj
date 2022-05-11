@@ -1,5 +1,6 @@
 import {
 	EventDispatcher,
+	MaxEquation,
 	Vector3
 } from '../three.js';
 
@@ -57,6 +58,10 @@ class Movement extends EventDispatcher {
             instructions.style.display = '';
         } );    
 
+        this.isLocked = function() {
+            return controls.isLocked;
+        }
+
         // Input Functions
         function onKeyDown( event ) {
 
@@ -86,7 +91,6 @@ class Movement extends EventDispatcher {
                     if ( canJump === true ) velocity.y += jumpHeight;
                     canJump = false;
                     break;
-
             }
 
         };
@@ -114,7 +118,6 @@ class Movement extends EventDispatcher {
                 case 'KeyD':
                     moveRight = false;
                     break;
-
             }
 
         };
@@ -135,8 +138,6 @@ class Movement extends EventDispatcher {
                 //const intersections = raycaster.intersectObjects( objects, false );
 
                 //const onObject = intersections.length > 0;
-
-
                 const delta = ( time - prevTime ) / 1000;
 
                 velocity.x -= velocity.x * speed * delta;
@@ -150,13 +151,6 @@ class Movement extends EventDispatcher {
 
                 if ( moveForward || moveBackward ) velocity.z -= direction.z * 400.0 * delta;
                 if ( moveLeft || moveRight ) velocity.x -= direction.x * 400.0 * delta;
-
-                //if ( onObject === true ) {
-
-                //    velocity.y = Math.max( 0, velocity.y );
-                //    canJump = true;
-
-                //}
 
                 controls.moveRight( - velocity.x * delta );
                 controls.moveForward( - velocity.z * delta );

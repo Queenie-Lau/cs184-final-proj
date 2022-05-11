@@ -3,13 +3,8 @@
 	<head>
 		<title>Super Mario First Person Shooter</title>
 		<link type="text/css" rel="stylesheet" href="">
-		<link rel="preconnect" href="https://fonts.googleapis.com"> 
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> 
-		<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
 		<style>
-			body {
-				font-family: 'Poppins', sans-serif;
-			}
+			@font-face { font-family: Mario; src: url('assets/fonts/SuperMario256.ttf'); }
 			#blocker {
 				position: absolute;
 				width: 100%;
@@ -27,10 +22,91 @@
 				align-items: center;
 
 				text-align: center;
+				font-family: 'Mario';
 				font-size: 28px;
+				color: #FBD000;
+				text-shadow:
+				-2px -2px 0 #000,
+				2px -2px 0 #000,
+				-2px 2px 0 #000,
+				2px 2px 0 #000; 
 				cursor: pointer;
 			}
+
+			#coin-text {
+				bottom: 10px;
+			}
+
+			#coin-img, #goomba-img {
+				display: flex;
+				flex-direction: row;
+				justify-content: left; 
+				align-items: center;
+			}
+
+			.coin-counter {
+				font-family: 'Mario';
+				position: absolute;
+				color: #FBD000;
+				padding-left: 5%;
+				text-shadow:
+				-2px -2px 0 #000,
+				2px -2px 0 #000,
+				-2px 2px 0 #000,
+				2px 2px 0 #000;  
+				
+				width: 50%;
+				z-index: 2;
+				font-size: 50px;
+				padding-top: 2%;
+				display: flex;
+				flex-direction: row;
+			}
+
+			.goomba-counter {
+				font-family: 'Mario';
+				color: #FBD000;
+				text-shadow:
+				-2px -2px 0 #000,
+				2px -2px 0 #000,
+				-2px 2px 0 #000,
+				2px 2px 0 #000;  
+				position: absolute;
+				width: 50%;
+				z-index: 2;
+				font-size: 50px;
+				padding-left: 20%;
+				padding-top: 2%;
+			}
+			
+			.count-cointainer {
+				font-family: 'Mario';
+				position: absolute;
+				color: #FBD000;
+				text-shadow:
+				-2px -2px 0 #000,
+				2px -2px 0 #000,
+				-2px 2px 0 #000,
+				2px 2px 0 #000;  
+				
+				z-index: 2;
+				font-size: 50px;
+				display: flex;
+				flex-direction: row;
+				justify-content: center; 
+				align-items: center;
+			}
+
+			#goomba {
+				padding-right: 5%;
+			}
+
+			#coin {
+				padding-right: 35%;
+			}
+
 		</style>
+		<script src="src/js/ammo.js"></script>
 	</head>
 	<body>
 		<div id="blocker">
@@ -48,7 +124,30 @@
 			</div>
 		</div>
 
+		<div class="count-container">
 
-		<script type="module" src="src/main.js"></script>
+			<div class="coin-counter">
+				<div id="coin-img">
+					<img id="coin" src="assets/mario_assets/coin_counter.png" height="45">
+					<p id="coin-text">
+						0
+					</p>
+				</div>
+			</div>
+
+			 <div class="goomba-counter">
+				<div id="goomba-img">
+					<img id="goomba" src="assets/mario_assets/goomba.png" height="45">
+					<p id="goomba-text">
+						0
+					</p>
+				</div>
+			</div> 
+
+		</div>
+
+
+		</div>
 	</body>
+		<script type="module" src="src/main.js"></script>
 </html>
