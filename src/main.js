@@ -2,7 +2,7 @@ import * as THREE from "./js/three.js";
 import { ConvexObjectBreaker } from "./js/objectBreaking/ConvexObjectBreaker.js";
 import { Movement } from "./js/movement/FirstPersonMovement.js"
 import { GLTFLoader } from './js/GLTFLoader.js';
-import Ammo from './js/ammo.js';
+import { Ammo } from './js/ammo.js';
 
 // Graphics variables
 let camera, movement, scene, renderer, mixer, loader, intersectedObject;
@@ -11,11 +11,6 @@ const mouseCoords = new THREE.Vector2();
 const ballMaterial = new THREE.MeshPhongMaterial( { color: 0x202020 } );
 
 // Physics variables
-const gravityConstant = 7.8;
-let collisionConfiguration;
-let dispatcher;
-let broadphase;
-let solver;
 let physicsWorld;
 const margin = 0.05;
 
@@ -82,17 +77,14 @@ function main() {
 }
 
 // Declaring projectile-related variables
-let tmpTransformation = undefined;
 let raycaster = new THREE.Raycaster();
-let tmpPos = new THREE.Vector3();
-let mouseCoords = new THREE.Vector2();
 let coinsGroup = new THREE.Group();
 let gravityConstant = 10; // Define gravity properly
 
 Ammo().then(start);
 
 function start() {
-    startBulletTime(); // or init()
+    init()
     animate();
 }
 
@@ -151,16 +143,6 @@ function initGraphicsWorld() {
     window.addEventListener('resize', onWindowResize);
 }
 
-// Instantiate the floor mesh
-function initFloor() {
-    const floorGeometry = new THREE.PlaneGeometry(50, 50, 20);
-    const floorMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
-
-    const meshFloor = new THREE.Mesh(floorGeometry, floorMaterial);
-    meshFloor.receiveShadow = true;
-    scene.add(meshFloor);
-}
-
 // Instantiates all scene primitives
 function addSceneObjects() {
     initBoundaries();
@@ -173,36 +155,6 @@ function addSceneObjects() {
     initGoombaEnemies();
     initSkyBox();
     scene.add(coinsGroup);
-}
-
-// Instantiate objects
-function initObjects() {
-    initTree(-3, -6, 2.5, 6);
-    initTree(5, 5, 1, 8);
-    initTree(3, 3);
-    initTree(-4, 8);
-    initTree(8, 8);
-    initTree(-6, 9, 1.5, 4, 7);
-    initTree(-7.5, -7.5, 2, 6, 7);
-    initCapsuleTree(0.5, 0.5, -9, 0.4, 1);
-    initCapsuleTree(1, 1, 7, 0.4, 1);
-
-    initBricks(6, 0.5, -4, 0.7, 0.7, 0.7);
-    initBricks(4, 5, -10, 0.7, 0.7, 0.7);
-    initBricks(-4, 1, 0, 0.7, 0.7, 0.7);
-
-    initPowerUpBox(4, 3, 5, 0.7, 0.7, 0.7);
-    initPowerUpBox(10, 3, 5, 0.7, 0.7, 0.7);
-    initPowerUpBox(-4, 3, 5, 0.7, 0.7, 0.7);
-
-    initCoin(-18, 2, 0, 0.3, 0.3, 0.1, 32, 1, false);
-    initCoin(-5, 2, 4, 0.3, 0.3, 0.1, 32, 1, false);
-    initCoin(3, 2, 4, 0.3, 0.3, 0.1, 32, 1, false);
-    
-    addCoinsRandomly();
-    initSceneDecor(-10, 15);
-    initTetrahedron(0, 0, 0);
-    initSphere();
 }
 
 // Instantiate a shooting sphere (e.g., tennis ball)
@@ -223,13 +175,6 @@ function init() {
     initPhysicsWorld();
     initObjects();
     initInput();
-}
-
-// Handle window resize event
-function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 // Animation loop
@@ -359,8 +304,8 @@ function initObjects() {
    	initBricks(5.2, 0.35, 10, .7, .7, .7, brown);
    	initBricks(6, 0.35, -4, .7, .7, .7, brown);
    	initBricks(4, 0.35, -10, .7, .7, .7, brown);
-   	initBricks(-4, 0.35, 0, .7, .7, .7, brown);
-    initBreakableBlock(4, 0.35, 0, .7, .7, .7, brown)
+   	initBricks(-4, 0.35, 0, .7, .7, .7, brown, true);
+    initBricks(4, 0.35, 0, .7, .7, .7, brown, true)
 
     initPowerUpBox(14, 3, 5, .7, .7, .7);
    	initPowerUpBox(10, 3, 5, .7, .7, .7);
@@ -724,9 +669,6 @@ function onWindowResize() {
     renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
-
-
-
 /* COIN FUNCTIONS */
 
 function updateCounter(currCoins, currGoomba, type) {
@@ -746,7 +688,5 @@ function updateCounter(currCoins, currGoomba, type) {
 function removeIntersectedCoinAnimation() {
 	coinsGroup.remove(intersectedObject);
 }
-
-
 
 /* EXPORTS */
