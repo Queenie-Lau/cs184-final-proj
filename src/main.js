@@ -83,299 +83,162 @@ function main() {
 }
 
 //Declaring projectile-related variables
+// Declaring projectile-related variables
 let physicsWorld;
 let tmpTransformation = undefined;
 let raycaster = new THREE.Raycaster();
 let tmpPos = new THREE.Vector3();
 let mouseCoords = new THREE.Vector2();
-
-Ammo().then(start)
-function startBulletTime(){
-	initPhysicsWorld();
-	initGraphicsWorld();
-
-	createGround();
-	createGridCubes();
-	createDropCube();
-
-	addEventHandlers();
-
-	render();
-}
-
-function initPhysicsWorld() {
-	let collisionConfiguration = new Ammo.btDefaultCollisonConfiguration(),
-
-		dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration),
-
-		overlappingPairCache = new Ammo.btDbvtBroadphase(),
-
-		solver = new Ammo.btSequentialImpulseConstraintSolver();
-
-	physicsWorld = new Ammo.btDiscreteDynamicWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
-	physicsWorld.setGravity(new Ammo.btVector3(0, -10, 0));
-}
-
-function initGraphicsWorld(){
-	clock = new THREE.Clock();
-
-	
-
-}
-
-
-// Instantiates all scene primitives
-function addSceneObjects() {
-	initBoundaries();
-	initObjects();
-	initLights();
-	texturizeFloor();
-	initFloor();
-	initCylinderPipes();
-	initPlayerGun();
-	initGoombaEnemies();
-	initSkyBox();
-	scene.fog = new THREE.Fog(0xDFE9F3, -40, 100);
-	scene.background = new THREE.Color("rgb(135, 206, 235)");
-	scene.add( coinsGroup );
-}
-
-// Instantiate the floor mesh
-function initFloor() {
-	const floorGeometry = new THREE.PlaneGeometry( platform.width, platform.height, 20);
-	//const floorMaterial = new THREE.MeshPhongMaterial( {color: white, wireframe: WIREFRAME} )
-	const floorMaterial = new THREE.MeshPhongMaterial({map : floorTexture})
-	const meshFloor = new THREE.Mesh( floorGeometry, floorMaterial );
-	var coinsGroup = new THREE.Group();
-	var coinCount = 0;
-	var goombaCount = 0;
-}
-
-
-/* SETUP */ 
+let coinsGroup = new THREE.Group();
+let gravityConstant = 10; // Define gravity properly
 
 Ammo().then(start);
+
 function start() {
     init();
     animate();
 }
 
-var bullets = [];
-
-// Instantiate player obstacles
-function initObjects() {
-	initTree(-3, -6, 2.5, 6);
-	initTree(5, 5, 1, 8);
-	initTree(3, 3);
-	initTree(-4, 8);
-	initTree(8, 8);
-	initTree(-6, 9, 1.5, 4, 7);
-	initTree(-7.5, -7.5, 2, 6, 7);
-	initCapsuleTree(.5, .5, -9, 0.4, 1);
-	initCapsuleTree(1, 1, 7, 0.4, 1);
-
-	initBricks(6, .5, -4, .7, .7, .7, brown);
-	initBricks(4, 5, -10, .7, .7, .7, brown);
-	initBricks(-4, 1, 0, .7, .7, .7, brown);
-
-	initPowerUpBox(4, 3, 5, .7, .7, .7);
-	initPowerUpBox(10, 3, 5, .7, .7, .7);
-	initPowerUpBox(-4, 3, 5, .7, .7, .7);
-	
-	initCoin(-18, 2, 0, .3, .3, .1, 32, 1, false);
-	initCoin(-5, 2, 4, .3, .3, .1, 32, 1, false);
-	initCoin(3, 2, 4, .3, .3, .1, 32, 1, false);
-	addCoinsRandomly(); // DO COLLISION CHECKS
-	initSceneDecor(-10, 15);
-	// addDecorRandomly(); // DO COLLISION CHECKS, takes up a lot of mem.
-	initTetrahedron(0, 0, 0);
-	initSphere(); // Player will be shooting tennis? balls
-}
-
-
-function initSphere() {
-	const sphere = new THREE.Mesh(new THREE.SphereGeometry(1), new THREE.MeshPhongMaterial( { color: 0xff5191 }));
-	sphere.position.set(-10, 10, 0);
-	sphere.castShadow = true;
-	sphere.receiveShadow = true;
-}
-
-function init() {
-    initGraphicsWorld();
+function startBulletTime() {
     initPhysicsWorld();
-    movement = new Movement( camera, renderer.domElement ); 
-    initObjects();
-    initInput();
+    initGraphicsWorld();
+    createGround();
+    createGridCubes();
+    createDropCube();
+    addEventHandlers();
+    render();
 }
 
+// Initialize Physics World
 function initPhysicsWorld() {
-    collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
-    dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
-    broadphase = new Ammo.btDbvtBroadphase();
-    solver = new Ammo.btSequentialImpulseConstraintSolver();
-    physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
+    let collisionConfiguration = new Ammo.btDefaultCollisionConfiguration(),
+        dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration),
+        overlappingPairCache = new Ammo.btDbvtBroadphase(),
+        solver = new Ammo.btSequentialImpulseConstraintSolver();
+
+    physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
     physicsWorld.setGravity(new Ammo.btVector3(0, -gravityConstant, 0));
-    transformAux1 = new Ammo.btTransform();
-    tempBtVec3_1 = new Ammo.btVector3( 0, 0, 0 );
 }
 
+// Initialize Graphics World
 function initGraphicsWorld() {
-    camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 30000 );
-    camera.position.set(0, player.height, -5);
-    camera.lookAt(new THREE.Vector3(0,player.height,0));
+    clock = new THREE.Clock();
+    camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 30000);
+    camera.position.set(0, 10, -5);
+    camera.lookAt(new THREE.Vector3(0, 10, 0));
 
     scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0xDFE9F3, -40, 100);
+    scene.background = new THREE.Color("rgb(135, 206, 235)");
 
+    var white = 0xffffff;
     var pointLight = new THREE.PointLight(white, 0.1, 50);
     var directionalLight = new THREE.DirectionalLight(white, 0.7);
+
     pointLight.position.set(-10, 10, -3);
     pointLight.castShadow = true;
     pointLight.shadow.camera.near = 0.1;
     pointLight.shadow.camera.far = 20;
+
     scene.add(pointLight);
     scene.add(directionalLight);
+    scene.add(coinsGroup);
 
-    renderer = new THREE.WebGLRenderer( { antialias: true } );
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.BasicShadowMap;
     renderer.outputEncoding = THREE.sRGBEncoding;
-    document.body.appendChild( renderer.domElement );
+    document.body.appendChild(renderer.domElement);
 
-    window.addEventListener( 'resize', onWindowResize );
-
+    window.addEventListener('resize', onWindowResize);
 }
 
+// Instantiate the floor mesh
+function initFloor() {
+    const floorGeometry = new THREE.PlaneGeometry(50, 50, 20);
+    const floorMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
 
-
-/* PHYSICS UPDATES */
-
-function updatephysicsWorld(deltaTime) {
-    physicsWorld.stepSimulation(deltaTime, 10);
-
-    for( let i = 0; i < rigidBodies.length; i++) {
-        let Graphics_Obj = rigidBodies[i];
-        let Physics_Obj = Graphics_Obj.userData.physicsBody;
-        let motionState = Physics_Obj.getMotionState();
-
-        if(motionState) {
-            motionState.getWorldTransform(transformAux1);
-            let new_pos = transformAux1.getOrigin();
-            let new_qua = transformAux1.getRotation();
-            Graphics_Obj.position.set(new_pos.x(), new_pos.y(), new_pos.z());
-
-            Graphics_Obj.quaternion.set(new_qua.x(), new_qua.y(), new_qua.z(), new_qua.w());
-        }
-    }
-    //checkForCollisions();
-    for ( let i = 0, il = dispatcher.getNumManifolds(); i < il; i ++ ) {
-
-        const contactManifold = dispatcher.getManifoldByIndexInternal( i );
-        const rb0 = Ammo.castObject( contactManifold.getBody0(), Ammo.btRigidBody );
-        const rb1 = Ammo.castObject( contactManifold.getBody1(), Ammo.btRigidBody );
-        const threeObject0 = Ammo.castObject( rb0.getUserPointer(), Ammo.btVector3 ).threeObject;
-        const threeObject1 = Ammo.castObject( rb1.getUserPointer(), Ammo.btVector3 ).threeObject;
-
-        if ( ! threeObject0 && ! threeObject1 ) {
-            continue;
-        }
-        if (threeObject0 && threeObject0.name == POWERUP) {
-            console.log(threeObject0.name);
-        }
-        
-        if (threeObject1 && threeObject1.name == POWERUP) {
-            console.log(threeObject1.name);
-        }
-
-        const userData0 = threeObject0 ? threeObject0.userData : null;
-        const userData1 = threeObject1 ? threeObject1.userData : null;
-        const breakable0 = userData0 ? userData0.breakable : false;
-        const breakable1 = userData1 ? userData1.breakable : false;
-        const collided0 = userData0 ? userData0.collided : false;
-        const collided1 = userData1 ? userData1.collided : false;
-
-        if ( ( ! breakable0 && ! breakable1 ) || ( collided0 && collided1 ) ) {
-            continue;
-        }
-
-        let contact = false;
-        let maxImpulse = 0;
-        for ( let j = 0, jl = contactManifold.getNumContacts(); j < jl; j ++ ) {
-
-            const contactPoint = contactManifold.getContactPoint( j );
-
-            if ( contactPoint.getDistance() < 0 ) {
-                contact = true;
-                const impulse = contactPoint.getAppliedImpulse();
-                
-                if ( impulse > maxImpulse ) {
-                    maxImpulse = impulse;
-                    const pos = contactPoint.get_m_positionWorldOnB();
-                    const normal = contactPoint.get_m_normalWorldOnB();
-                    impactPoint.set( pos.x(), pos.y(), pos.z() );
-                    impactNormal.set( normal.x(), normal.y(), normal.z() );
-                }
-                break;
-            }
-        }
-
-        // If no point has contact, abort
-        if ( ! contact ) continue;
-
-        // Subdivision
-
-        const fractureImpulse = 250;
-
-        if ( breakable0 && ! collided0 && maxImpulse > fractureImpulse ) {
-
-            const debris = convexBreaker.subdivideByImpact( threeObject0, impactPoint, impactNormal, 1, 2, 1.5 );
-            const numObjects = debris.length;
-
-            for ( let j = 0; j < numObjects; j ++ ) {
-                const vel = rb0.getLinearVelocity();
-                const angVel = rb0.getAngularVelocity();
-                const fragment = debris[ j ];
-                fragment.userData.velocity.set( vel.x(), vel.y(), vel.z() );
-                fragment.userData.angularVelocity.set( angVel.x(), angVel.y(), angVel.z() );
-                createDebrisFromBreakableObject( fragment );
-            }
-            objectsToRemove[ numObjectsToRemove ++ ] = threeObject0;
-            userData0.collided = true;
-        }
-
-        if ( breakable1 && ! collided1 && maxImpulse > fractureImpulse ) {
-            const debris = convexBreaker.subdivideByImpact( threeObject1, impactPoint, impactNormal, 1, 2, 1.5 );
-            const numObjects = debris.length;
-
-            for ( let j = 0; j < numObjects; j ++ ) {
-                const vel = rb1.getLinearVelocity();
-                const angVel = rb1.getAngularVelocity();
-                const fragment = debris[ j ];
-                fragment.userData.velocity.set( vel.x(), vel.y(), vel.z() );
-                fragment.userData.angularVelocity.set( angVel.x(), angVel.y(), angVel.z() );
-                createDebrisFromBreakableObject( fragment );
-            }
-            objectsToRemove[ numObjectsToRemove ++ ] = threeObject1;
-            userData1.collided = true;
-        }
-    }
-
-    for ( let i = 0; i < numObjectsToRemove; i ++ ) {
-        removeDebris( objectsToRemove[ i ] );
-    }
-    numObjectsToRemove = 0;
-
+    const meshFloor = new THREE.Mesh(floorGeometry, floorMaterial);
+    meshFloor.receiveShadow = true;
+    scene.add(meshFloor);
 }
 
+// Instantiates all scene primitives
+function addSceneObjects() {
+    initBoundaries();
+    initObjects();
+    initLights();
+    texturizeFloor();
+    initFloor();
+    initCylinderPipes();
+    initPlayerGun();
+    initGoombaEnemies();
+    initSkyBox();
+    scene.add(coinsGroup);
+}
+
+// Instantiate objects
+function initObjects() {
+    initTree(-3, -6, 2.5, 6);
+    initTree(5, 5, 1, 8);
+    initTree(3, 3);
+    initTree(-4, 8);
+    initTree(8, 8);
+    initTree(-6, 9, 1.5, 4, 7);
+    initTree(-7.5, -7.5, 2, 6, 7);
+    initCapsuleTree(0.5, 0.5, -9, 0.4, 1);
+    initCapsuleTree(1, 1, 7, 0.4, 1);
+
+    initBricks(6, 0.5, -4, 0.7, 0.7, 0.7);
+    initBricks(4, 5, -10, 0.7, 0.7, 0.7);
+    initBricks(-4, 1, 0, 0.7, 0.7, 0.7);
+
+    initPowerUpBox(4, 3, 5, 0.7, 0.7, 0.7);
+    initPowerUpBox(10, 3, 5, 0.7, 0.7, 0.7);
+    initPowerUpBox(-4, 3, 5, 0.7, 0.7, 0.7);
+
+    initCoin(-18, 2, 0, 0.3, 0.3, 0.1, 32, 1, false);
+    initCoin(-5, 2, 4, 0.3, 0.3, 0.1, 32, 1, false);
+    initCoin(3, 2, 4, 0.3, 0.3, 0.1, 32, 1, false);
+    
+    addCoinsRandomly();
+    initSceneDecor(-10, 15);
+    initTetrahedron(0, 0, 0);
+    initSphere();
+}
+
+// Instantiate a shooting sphere (e.g., tennis ball)
+function initSphere() {
+    const sphere = new THREE.Mesh(
+        new THREE.SphereGeometry(1),
+        new THREE.MeshPhongMaterial({ color: 0xff5191 })
+    );
+    sphere.position.set(-10, 10, 0);
+    sphere.castShadow = true;
+    sphere.receiveShadow = true;
+    scene.add(sphere);
+}
+
+// Main Initialization
+function init() {
+    initGraphicsWorld();
+    initPhysicsWorld();
+    initObjects();
+    initInput();
+}
+
+// Handle window resize event
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// Animation loop
 function animate() {
-    requestAnimationFrame( animate );
-    movement.update();
-
-    coinsGroup.children.forEach(child => {
-		child.rotateZ(-0.1);
-	});
-
-    render();
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
 }
 
 function render() {
