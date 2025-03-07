@@ -93,7 +93,7 @@ let gravityConstant = 10; // Define gravity properly
 Ammo().then(start);
 
 function start() {
-    init();
+    startBulletTime(); // or init()
     animate();
 }
 
@@ -361,6 +361,7 @@ function initObjects() {
    	initBricks(6, 0.35, -4, .7, .7, .7, brown);
    	initBricks(4, 0.35, -10, .7, .7, .7, brown);
    	initBricks(-4, 0.35, 0, .7, .7, .7, brown);
+    initBreakableBlock(4, 0.35, 0, .7, .7, .7, brown)
 
     initPowerUpBox(14, 3, 5, .7, .7, .7);
    	initPowerUpBox(10, 3, 5, .7, .7, .7);
@@ -373,14 +374,14 @@ function initObjects() {
     initFlower(6, 6);
  	initFlower(-13, 1);
 
-     initTree(-13, -6, 2.5, 6);
-     initTree(5, 5, 1, 8);
-     initTree(3, 3);
-     initTree(-6, 9, 1.5, 4, 7);
-     initTree(-7.5, -7.5, 2, 6, 7);
-     initTree(10, 1);
-     initTree(14, 14);
-     initTree(10, -10);
+    initTree(-13, -6, 2.5, 6);
+    initTree(5, 5, 1, 8);
+    initTree(3, 3);
+    initTree(-6, 9, 1.5, 4, 7);
+    initTree(-7.5, -7.5, 2, 6, 7);
+    initTree(10, 1);
+    initTree(14, 14);
+    initTree(10, -10);
 
     initCapsuleTree(.5, .5, -9, 0.4, 1);
     initCapsuleTree(1, 1, 7, 0.4, 1);
