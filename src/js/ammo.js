@@ -949,8 +949,4 @@ if (typeof exports === 'object' && typeof module === 'object')
 else if (typeof define === 'function' && define['amd'])
   define([], function() { return Ammo; });
 else if (typeof exports === 'object')
-<<<<<<< HEAD
   exports["Ammo"] = Ammo;
-=======
-  exports["Ammo"] = Ammo;
->>>>>>> 941003d572f445749e935ef23d7d58babcd4e5f7
