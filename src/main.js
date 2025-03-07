@@ -2,7 +2,6 @@ import * as THREE from "./js/three.js";
 import { ConvexObjectBreaker } from "./js/objectBreaking/ConvexObjectBreaker.js";
 import { Movement } from "./js/movement/FirstPersonMovement.js"
 import { GLTFLoader } from './js/GLTFLoader.js';
-import { Movement} from './js/movement/FirstPersonMovement.js';
 import Ammo from './js/ammo.js';
 
 // Graphics variables
