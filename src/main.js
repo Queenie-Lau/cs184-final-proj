@@ -8,7 +8,6 @@ import Ammo from './js/ammo.js';
 let camera, movement, scene, renderer, mixer, loader, intersectedObject;
 const clock = new THREE.Clock();
 const mouseCoords = new THREE.Vector2();
-const raycaster = new THREE.Raycaster();
 const ballMaterial = new THREE.MeshPhongMaterial( { color: 0x202020 } );
 
 // Physics variables
@@ -82,7 +81,7 @@ function main() {
 	animate();
 }
 
-//Declaring projectile-related variables
+// Declaring projectile-related variables
 let tmpTransformation = undefined;
 let raycaster = new THREE.Raycaster();
 let tmpPos = new THREE.Vector3();
