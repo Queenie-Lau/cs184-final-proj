@@ -83,8 +83,6 @@ function main() {
 }
 
 //Declaring projectile-related variables
-// Declaring projectile-related variables
-let physicsWorld;
 let tmpTransformation = undefined;
 let raycaster = new THREE.Raycaster();
 let tmpPos = new THREE.Vector3();
