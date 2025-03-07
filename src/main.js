@@ -2,11 +2,8 @@ import * as THREE from "./js/three.js";
 import { ConvexObjectBreaker } from "./js/objectBreaking/ConvexObjectBreaker.js";
 import { Movement } from "./js/movement/FirstPersonMovement.js"
 import { GLTFLoader } from './js/GLTFLoader.js';
-<<<<<<< HEAD
 import { Movement} from './js/movement/FirstPersonMovement.js';
 import Ammo from './js/ammo.js';
-=======
->>>>>>> 941003d572f445749e935ef23d7d58babcd4e5f7
 
 // Graphics variables
 let camera, movement, scene, renderer, mixer, loader, intersectedObject;
