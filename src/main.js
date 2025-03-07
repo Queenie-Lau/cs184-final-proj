@@ -54,7 +54,6 @@ var blue = 0x039dfc;
 var brown = 0x964B00;
 var gray = 0xa9a9a9;
 
-<<<<<<< HEAD
 // initialize scene
 function main() {
 	//Create and position the camera
@@ -148,11 +147,10 @@ function initFloor() {
 	//const floorMaterial = new THREE.MeshPhongMaterial( {color: white, wireframe: WIREFRAME} )
 	const floorMaterial = new THREE.MeshPhongMaterial({map : floorTexture})
 	const meshFloor = new THREE.Mesh( floorGeometry, floorMaterial );
-=======
-var coinsGroup = new THREE.Group();
-var coinCount = 0;
-var goombaCount = 0;
->>>>>>> 941003d572f445749e935ef23d7d58babcd4e5f7
+	var coinsGroup = new THREE.Group();
+	var coinCount = 0;
+	var goombaCount = 0;
+}
 
 
 /* SETUP */ 
@@ -163,7 +161,6 @@ function start() {
     animate();
 }
 
-<<<<<<< HEAD
 var bullets = [];
 
 // Instantiate player obstacles
@@ -202,7 +199,8 @@ function initSphere() {
 	sphere.position.set(-10, 10, 0);
 	sphere.castShadow = true;
 	sphere.receiveShadow = true;
-=======
+}
+
 function init() {
     initGraphicsWorld();
     initPhysicsWorld();
@@ -218,8 +216,6 @@ function initPhysicsWorld() {
     solver = new Ammo.btSequentialImpulseConstraintSolver();
     physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
     physicsWorld.setGravity(new Ammo.btVector3(0, -gravityConstant, 0));
->>>>>>> 941003d572f445749e935ef23d7d58babcd4e5f7
-
     transformAux1 = new Ammo.btTransform();
     tempBtVec3_1 = new Ammo.btVector3( 0, 0, 0 );
 }
